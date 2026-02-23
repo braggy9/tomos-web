@@ -1,0 +1,44 @@
+"use client";
+
+import { useState } from "react";
+import type { TaskStatus, TaskPriority } from "@tomos/api";
+import { useFilteredTasks } from "../hooks/useTasks";
+import { QuickAdd } from "../components/QuickAdd";
+import { TaskFilters } from "../components/TaskFilters";
+import { TaskList } from "../components/TaskList";
+
+export default function TasksPage() {
+  const [status, setStatus] = useState<TaskStatus | "all">("all");
+  const [priority, setPriority] = useState<TaskPriority | "all">("all");
+  const [search, setSearch] = useState("");
+
+  const { data: tasks, isLoading, error } = useFilteredTasks({
+    status,
+    priority,
+    search,
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-gray-900">Tasks</h1>
+        {tasks && (
+          <span className="text-sm text-gray-500">{tasks.length} tasks</span>
+        )}
+      </div>
+
+      <QuickAdd />
+
+      <TaskFilters
+        status={status}
+        priority={priority}
+        search={search}
+        onStatusChange={setStatus}
+        onPriorityChange={setPriority}
+        onSearchChange={setSearch}
+      />
+
+      <TaskList tasks={tasks} isLoading={isLoading} error={error} />
+    </div>
+  );
+}
