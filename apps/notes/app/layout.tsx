@@ -6,6 +6,16 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "TomOS Notes",
   description: "Professional notes",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Notes",
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon-192.png",
+  },
 };
 
 export const viewport: Viewport = {

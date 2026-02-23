@@ -6,6 +6,16 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "TomOS Tasks",
   description: "Task management",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Tasks",
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon-192.png",
+  },
 };
 
 export const viewport: Viewport = {

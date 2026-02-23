@@ -6,6 +6,16 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "TomOS Matters",
   description: "Legal matter management",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Matters",
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon-192.png",
+  },
 };
 
 export const viewport: Viewport = {
