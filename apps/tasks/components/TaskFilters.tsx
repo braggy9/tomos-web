@@ -13,18 +13,16 @@ interface TaskFiltersProps {
 
 const statusOptions: Array<{ value: TaskStatus | "all"; label: string }> = [
   { value: "all", label: "All" },
-  { value: "todo", label: "To Do" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "done", label: "Done" },
-  { value: "blocked", label: "Blocked" },
+  { value: "Inbox", label: "Inbox" },
+  { value: "In Progress", label: "In Progress" },
+  { value: "Done", label: "Done" },
 ];
 
 const priorityOptions: Array<{ value: TaskPriority | "all"; label: string }> = [
   { value: "all", label: "All" },
-  { value: "urgent", label: "Urgent" },
-  { value: "high", label: "High" },
-  { value: "medium", label: "Medium" },
-  { value: "low", label: "Low" },
+  { value: "Urgent", label: "Urgent" },
+  { value: "Important", label: "Important" },
+  { value: "Someday", label: "Someday" },
 ];
 
 export function TaskFilters({
@@ -57,7 +55,7 @@ export function TaskFilters({
           placeholder="Search tasks..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none"
+          className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none"
         />
       </div>
 
@@ -71,7 +69,7 @@ export function TaskFilters({
               onClick={() => onStatusChange(opt.value)}
               className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap transition-colors ${
                 status === opt.value
-                  ? "bg-brand-600 text-white"
+                  ? "bg-violet-600 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
@@ -88,7 +86,7 @@ export function TaskFilters({
               onClick={() => onPriorityChange(opt.value)}
               className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap transition-colors ${
                 priority === opt.value
-                  ? "bg-brand-600 text-white"
+                  ? "bg-violet-600 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >

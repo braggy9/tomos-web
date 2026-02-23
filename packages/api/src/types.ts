@@ -1,30 +1,17 @@
 // ─── Task Types ───────────────────────────────────
 
-export type TaskStatus = "todo" | "in_progress" | "done" | "blocked";
-export type TaskPriority = "low" | "medium" | "high" | "urgent";
-
-export interface TaskTag {
-  tag: { id: string; name: string; color?: string | null };
-}
-
-export interface TaskProject {
-  id: string;
-  title: string;
-  color?: string | null;
-}
+export type TaskStatus = "Inbox" | "In Progress" | "Done";
+export type TaskPriority = "Urgent" | "Important" | "Someday";
 
 export interface Task {
   id: string;
   title: string;
-  description?: string | null;
   status: TaskStatus;
-  priority: TaskPriority;
-  dueDate?: string | null;
-  completedAt?: string | null;
-  project?: TaskProject | null;
-  tags: TaskTag[];
-  createdAt: string;
-  updatedAt: string;
+  priority: TaskPriority | null;
+  context: string[];
+  dueDate: string | null;
+  energy: string | null;
+  time: string | null;
 }
 
 export interface CreateTaskRequest {
@@ -58,8 +45,6 @@ export interface UpdateTaskRequest {
   priority?: string;
   dueDate?: string | null;
   context?: string[];
-  tags?: string[];
-  description?: string;
 }
 
 export interface AllTasksResponse {
@@ -352,6 +337,97 @@ export interface SmartSurfaceRecommendation {
   score: number;
   priority: TaskPriority;
   source: string;
+}
+
+// ─── Journal Types ───────────────────────────────
+
+export type JournalMood = "great" | "good" | "okay" | "low" | "rough";
+export type JournalEnergy = "high" | "medium" | "low";
+
+export interface JournalEntry {
+  id: string;
+  content: string;
+  title?: string | null;
+  excerpt?: string | null;
+  wordCount: number;
+  mood?: JournalMood | null;
+  energy?: JournalEnergy | null;
+  reflection?: string | null;
+  themes: string[];
+  tags: string[];
+  entryDate: string;
+  createdAt: string;
+  updatedAt: string;
+  conversations?: { id: string; title?: string | null; createdAt: string }[];
+}
+
+export interface CreateJournalEntryRequest {
+  content: string;
+  title?: string;
+  mood?: JournalMood;
+  energy?: JournalEnergy;
+  themes?: string[];
+  tags?: string[];
+  entryDate?: string;
+}
+
+export interface UpdateJournalEntryRequest {
+  content?: string;
+  title?: string;
+  mood?: JournalMood;
+  energy?: JournalEnergy;
+  themes?: string[];
+  tags?: string[];
+  reflection?: string;
+  entryDate?: string;
+}
+
+export interface JournalConversation {
+  id: string;
+  entryId?: string | null;
+  title?: string | null;
+  mode: string;
+  createdAt: string;
+  updatedAt: string;
+  entry?: { id: string; title?: string | null; content: string; mood?: string | null; entryDate: string } | null;
+  messages?: JournalMessage[];
+}
+
+export interface JournalMessage {
+  id: string;
+  conversationId: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: string;
+}
+
+export interface JournalInsights {
+  period: { days: number; from: string; to: string };
+  stats: {
+    totalEntries: number;
+    periodEntries: number;
+    currentStreak: number;
+    entriesPerWeek: number;
+    totalWords: number;
+    avgWordsPerEntry: number;
+    conversationsThisPeriod: number;
+  };
+  moods: Record<string, number>;
+  energy: Record<string, number>;
+  topThemes: { theme: string; count: number }[];
+  moodTimeline: { date: string; mood: string; energy?: string | null }[];
+}
+
+export interface JournalSummary {
+  id: string;
+  type: string;
+  periodStart: string;
+  periodEnd: string;
+  content: string;
+  themes: string[];
+  moodPattern?: string | null;
+  insights?: Record<string, unknown> | null;
+  createdAt: string;
 }
 
 // ─── Generic API Response ─────────────────────────

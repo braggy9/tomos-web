@@ -20,15 +20,13 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [priority, setPriority] = useState("");
   const [status, setStatus] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [description, setDescription] = useState("");
 
   useEffect(() => {
     if (task) {
       setTitle(task.title);
-      setPriority(task.priority);
+      setPriority(task.priority ?? "");
       setStatus(task.status);
       setDueDate(task.dueDate ? task.dueDate.slice(0, 10) : "");
-      setDescription(task.description ?? "");
     }
   }, [task]);
 
@@ -45,20 +43,18 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  const isDone = task.status === "done";
+  const isDone = task.status === "Done";
   const hasChanges =
     title !== task.title ||
-    priority !== task.priority ||
+    priority !== (task.priority ?? "") ||
     status !== task.status ||
-    dueDate !== (task.dueDate ? task.dueDate.slice(0, 10) : "") ||
-    description !== (task.description ?? "");
+    dueDate !== (task.dueDate ? task.dueDate.slice(0, 10) : "");
 
   const handleSave = () => {
     const data: Record<string, string | null | undefined> = {};
     if (title !== task.title) data.title = title;
-    if (priority !== task.priority) data.priority = priority;
+    if (priority !== (task.priority ?? "")) data.priority = priority;
     if (status !== task.status) data.status = status;
-    if (description !== (task.description ?? "")) data.description = description;
     if (dueDate !== (task.dueDate ? task.dueDate.slice(0, 10) : "")) {
       data.dueDate = dueDate || null;
     }
@@ -99,7 +95,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         </button>
         <h1 className="text-lg font-bold text-gray-900 flex-1">Edit Task</h1>
         <div className="flex items-center gap-2">
-          <Badge variant="priority" value={task.priority} />
+          {task.priority && <Badge variant="priority" value={task.priority} />}
           <Badge variant="status" value={task.status} />
         </div>
       </div>
@@ -113,19 +109,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none"
-          />
-        </div>
-
-        {/* Description */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            placeholder="Add a description..."
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none resize-y"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none"
           />
         </div>
 
@@ -136,12 +120,11 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none"
             >
-              <option value="todo">To Do</option>
-              <option value="in_progress">In Progress</option>
-              <option value="done">Done</option>
-              <option value="blocked">Blocked</option>
+              <option value="Inbox">Inbox</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Done">Done</option>
             </select>
           </div>
           <div>
@@ -149,12 +132,11 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none"
             >
-              <option value="urgent">Urgent</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
+              <option value="Urgent">Urgent</option>
+              <option value="Important">Important</option>
+              <option value="Someday">Someday</option>
             </select>
           </div>
         </div>
@@ -166,38 +148,29 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none"
           />
         </div>
 
-        {/* Tags */}
-        {task.tags.length > 0 && (
+        {/* Context */}
+        {task.context && task.context.length > 0 && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Context</label>
             <div className="flex flex-wrap gap-1">
-              {task.tags.map((t) => (
-                <Badge key={t.tag.id} value={t.tag.name} />
+              {task.context.map((ctx) => (
+                <Badge key={ctx} variant="context" value={ctx} />
               ))}
             </div>
           </div>
         )}
 
-        {/* Project */}
-        {task.project && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Project</label>
-            <span className="text-sm text-gray-600">{task.project.title}</span>
+        {/* Energy + Time */}
+        {(task.energy || task.time) && (
+          <div className="flex gap-4 pt-2 border-t border-gray-100 text-xs text-gray-500">
+            {task.energy && <span>Energy: {task.energy}</span>}
+            {task.time && <span>Time: {task.time}</span>}
           </div>
         )}
-
-        {/* Meta */}
-        <div className="pt-2 border-t border-gray-100 text-xs text-gray-400 space-y-0.5">
-          <p>Created: {new Date(task.createdAt).toLocaleString("en-AU")}</p>
-          <p>Updated: {new Date(task.updatedAt).toLocaleString("en-AU")}</p>
-          {task.completedAt && (
-            <p>Completed: {new Date(task.completedAt).toLocaleString("en-AU")}</p>
-          )}
-        </div>
       </div>
 
       {/* Actions */}

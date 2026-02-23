@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#7c3aed"/>
+  <g fill="none" stroke="white" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Book/journal -->
+    <path d="M160 120h192c17.7 0 32 14.3 32 32v208c0 17.7-14.3 32-32 32H160c-17.7 0-32-14.3-32-32V152c0-17.7 14.3-32 32-32z"/>
+    <line x1="200" y1="120" x2="200" y2="392"/>
+    <!-- Writing lines -->
+    <line x1="240" y1="180" x2="336" y2="180"/>
+    <line x1="240" y1="230" x2="320" y2="230"/>
+    <line x1="240" y1="280" x2="336" y2="280"/>
+  </g>
+</svg>

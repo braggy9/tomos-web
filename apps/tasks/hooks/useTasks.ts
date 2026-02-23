@@ -32,8 +32,7 @@ export function useFilteredTasks(filters: {
       const q = filters.search.toLowerCase();
       return (
         task.title.toLowerCase().includes(q) ||
-        task.description?.toLowerCase().includes(q) ||
-        task.tags.some((t) => t.tag.name.toLowerCase().includes(q))
+        task.context?.some((c) => c.toLowerCase().includes(q))
       );
     }
     return true;
@@ -81,7 +80,7 @@ export function useCompleteTask() {
           ...old,
           tasks: old.tasks.map((t) =>
             t.id === id
-              ? { ...t, status: "done" as const, completedAt: new Date().toISOString() }
+              ? { ...t, status: "Done" as const }
               : t
           ),
         };

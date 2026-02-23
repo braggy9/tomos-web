@@ -13,7 +13,7 @@ interface TaskRowProps {
 export function TaskRow({ task }: TaskRowProps) {
   const complete = useCompleteTask();
   const { toast } = useToast();
-  const isDone = task.status === "done";
+  const isDone = task.status === "Done";
 
   const handleComplete = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -47,7 +47,7 @@ export function TaskRow({ task }: TaskRowProps) {
         className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-full border-2 transition-colors ${
           isDone
             ? "bg-green-500 border-green-500"
-            : "border-gray-300 hover:border-brand-500"
+            : "border-gray-300 hover:border-violet-500"
         }`}
         aria-label={isDone ? "Completed" : "Mark complete"}
       >
@@ -70,18 +70,10 @@ export function TaskRow({ task }: TaskRowProps) {
           </span>
         </div>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <Badge variant="priority" value={task.priority} />
-          {task.status !== "done" && <Badge variant="status" value={task.status} />}
-          {task.project && (
-            <span
-              className="inline-flex items-center gap-1 text-xs text-gray-500"
-              style={task.project.color ? { color: task.project.color } : undefined}
-            >
-              {task.project.title}
-            </span>
-          )}
-          {task.tags.map((t) => (
-            <Badge key={t.tag.id} value={t.tag.name} />
+          {task.priority && <Badge variant="priority" value={task.priority} />}
+          {task.status !== "Done" && <Badge variant="status" value={task.status} />}
+          {task.context?.map((ctx) => (
+            <Badge key={ctx} variant="context" value={ctx} />
           ))}
         </div>
       </div>
