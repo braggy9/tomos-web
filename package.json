@@ -7,6 +7,9 @@
     "lint": "turbo lint",
     "clean": "turbo clean"
   },
+  "dependencies": {
+    "next": "^15"
+  },
   "devDependencies": {
     "turbo": "^2"
   },
