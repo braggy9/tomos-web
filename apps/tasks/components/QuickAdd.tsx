@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useCreateTask } from "../hooks/useTasks";
 import { useToast } from "@tomos/ui";
 
@@ -9,6 +9,17 @@ export function QuickAdd() {
   const inputRef = useRef<HTMLInputElement>(null);
   const createTask = useCreateTask();
   const { toast } = useToast();
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +53,7 @@ export function QuickAdd() {
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Add a task... (e.g. Review contract tomorrow #urgent)"
+          placeholder="Add a task... press / to focus (e.g. Review contract tomorrow #urgent)"
           disabled={createTask.isPending}
           className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none disabled:opacity-50"
         />

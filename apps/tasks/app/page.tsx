@@ -7,6 +7,7 @@ import { QuickAdd } from "../components/QuickAdd";
 import { TaskFilters } from "../components/TaskFilters";
 import { TaskList } from "../components/TaskList";
 import { AppSwitcher } from "../components/AppSwitcher";
+import { TodaySchedule } from "../components/TodaySchedule";
 
 export default function TasksPage() {
   const [status, setStatus] = useState<TaskStatus | "all">("all");
@@ -30,6 +31,8 @@ export default function TasksPage() {
           <span className="text-sm text-gray-500">{tasks.length} tasks</span>
         )}
       </div>
+
+      <TodaySchedule />
 
       <QuickAdd />
 
