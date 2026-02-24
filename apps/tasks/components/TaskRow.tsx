@@ -44,10 +44,10 @@ export function TaskRow({ task }: TaskRowProps) {
       <button
         onClick={handleComplete}
         disabled={isDone}
-        className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-full border-2 transition-colors ${
+        className={`mt-0.5 flex-shrink-0 w-6 h-6 rounded-full border-2 transition-all ${
           isDone
             ? "bg-green-500 border-green-500"
-            : "border-gray-300 hover:border-violet-500"
+            : "border-gray-300 hover:border-violet-500 hover:bg-violet-50 hover:scale-110"
         }`}
         aria-label={isDone ? "Completed" : "Mark complete"}
       >
@@ -75,6 +75,14 @@ export function TaskRow({ task }: TaskRowProps) {
           {task.context?.map((ctx) => (
             <Badge key={ctx} variant="context" value={ctx} />
           ))}
+          {(task.subtaskCount ?? 0) > 0 && (
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-violet-50 text-violet-600 border border-violet-100">
+              <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+              </svg>
+              {task.subtaskCount}
+            </span>
+          )}
         </div>
       </div>
 

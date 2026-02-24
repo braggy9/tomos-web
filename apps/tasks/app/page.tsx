@@ -10,7 +10,7 @@ import { AppSwitcher } from "../components/AppSwitcher";
 import { TodaySchedule } from "../components/TodaySchedule";
 
 export default function TasksPage() {
-  const [status, setStatus] = useState<TaskStatus | "all">("all");
+  const [status, setStatus] = useState<TaskStatus | "all" | "active">("active");
   const [priority, setPriority] = useState<TaskPriority | "all">("all");
   const [search, setSearch] = useState("");
 
@@ -20,6 +20,11 @@ export default function TasksPage() {
     search,
   });
 
+  // Get total count for "X active / Y total" display
+  const { data: allTasks } = useFilteredTasks({ status: "all", priority: "all" });
+  const activeCount = allTasks?.filter((t) => t.status !== "Done").length ?? 0;
+  const totalCount = allTasks?.length ?? 0;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -27,8 +32,10 @@ export default function TasksPage() {
           <h1 className="text-xl font-bold text-gray-900">Tasks</h1>
           <AppSwitcher />
         </div>
-        {tasks && (
-          <span className="text-sm text-gray-500">{tasks.length} tasks</span>
+        {allTasks && (
+          <span className="text-sm text-gray-500">
+            {activeCount} active / {totalCount} total
+          </span>
         )}
       </div>
 

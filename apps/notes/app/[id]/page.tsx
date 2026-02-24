@@ -3,8 +3,9 @@
 import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useNote, useUpdateNote, useDeleteNote, useNoteAction } from "../../hooks/useNotes";
-import { Button, Badge, Spinner } from "@tomos/ui";
+import { Button, Badge, Spinner, MarkdownContent } from "@tomos/ui";
 import { useToast } from "@tomos/ui";
+import { SyntaxHelp } from "../../components/SyntaxHelp";
 import type { NoteStatus, NotePriority } from "@tomos/api";
 
 export default function NoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -125,6 +126,9 @@ export default function NoteDetailPage({ params }: { params: Promise<{ id: strin
             <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
             <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={16}
               className="w-full px-3 py-2 text-sm font-mono border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none resize-y" />
+            <div className="mt-1">
+              <SyntaxHelp />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
@@ -157,34 +161,59 @@ export default function NoteDetailPage({ params }: { params: Promise<{ id: strin
       ) : (
         /* View Mode */
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-          <div className="prose prose-sm max-w-none">
-            <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans">{note.content}</pre>
-          </div>
+          <MarkdownContent content={note.content} />
         </div>
       )}
 
       {/* Links */}
-      {note.links && (
+      {note.links && (note.links.tasks.length > 0 || note.links.matters.length > 0 || note.links.projects.length > 0 || note.links.notes.length > 0) && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-2">
           <h3 className="text-sm font-medium text-gray-700">Linked Items</h3>
           {note.links.tasks.length > 0 && (
-            <div className="text-xs text-gray-500">
-              Tasks: {note.links.tasks.map((t) => t.title).join(", ")}
+            <div className="text-xs text-gray-500 flex items-center gap-1 flex-wrap">
+              <span className="font-medium">Tasks:</span>
+              {note.links.tasks.map((t, i) => (
+                <span key={t.id}>
+                  <a href={`https://tomos-tasks.vercel.app/${t.id}`} target="_blank" rel="noopener noreferrer"
+                    className="text-violet-600 hover:text-violet-700 underline underline-offset-2">{t.title}</a>
+                  {i < note.links!.tasks.length - 1 && ", "}
+                </span>
+              ))}
             </div>
           )}
           {note.links.matters.length > 0 && (
-            <div className="text-xs text-gray-500">
-              Matters: {note.links.matters.map((m) => m.title).join(", ")}
+            <div className="text-xs text-gray-500 flex items-center gap-1 flex-wrap">
+              <span className="font-medium">Matters:</span>
+              {note.links.matters.map((m, i) => (
+                <span key={m.id}>
+                  <a href={`https://tomos-matters.vercel.app/${m.id}`} target="_blank" rel="noopener noreferrer"
+                    className="text-violet-600 hover:text-violet-700 underline underline-offset-2">{m.title}</a>
+                  {i < note.links!.matters.length - 1 && ", "}
+                </span>
+              ))}
             </div>
           )}
           {note.links.projects.length > 0 && (
-            <div className="text-xs text-gray-500">
-              Projects: {note.links.projects.map((p) => p.title).join(", ")}
+            <div className="text-xs text-gray-500 flex items-center gap-1 flex-wrap">
+              <span className="font-medium">Projects:</span>
+              {note.links.projects.map((p, i) => (
+                <span key={p.id}>
+                  <span className="text-gray-600">{p.title}</span>
+                  {i < note.links!.projects.length - 1 && ", "}
+                </span>
+              ))}
             </div>
           )}
           {note.links.notes.length > 0 && (
-            <div className="text-xs text-gray-500">
-              Notes: {note.links.notes.map((n) => n.title).join(", ")}
+            <div className="text-xs text-gray-500 flex items-center gap-1 flex-wrap">
+              <span className="font-medium">Notes:</span>
+              {note.links.notes.map((n, i) => (
+                <span key={n.id}>
+                  <a href={`/${n.id}`}
+                    className="text-violet-600 hover:text-violet-700 underline underline-offset-2">{n.title}</a>
+                  {i < note.links!.notes.length - 1 && ", "}
+                </span>
+              ))}
             </div>
           )}
         </div>

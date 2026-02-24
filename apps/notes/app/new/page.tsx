@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@tomos/ui";
 import { useToast } from "@tomos/ui";
 import { useCreateNote, useTemplates } from "../../hooks/useNotes";
+import { SyntaxHelp } from "../../components/SyntaxHelp";
 import type { NoteStatus, NotePriority } from "@tomos/api";
 
 export default function NewNotePage() {
@@ -118,6 +119,9 @@ export default function NewNotePage() {
               placeholder="Write your note in Markdown..."
               className="w-full px-3 py-2 text-sm font-mono border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none resize-y"
             />
+            <div className="mt-1">
+              <SyntaxHelp />
+            </div>
           </div>
 
           <div>

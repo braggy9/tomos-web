@@ -11,6 +11,10 @@ export async function getAllTasks(): Promise<AllTasksResponse> {
   return get<AllTasksResponse>("/api/all-tasks");
 }
 
+export async function getTask(id: string): Promise<{ success: boolean; task: Task }> {
+  return get<{ success: boolean; task: Task }>(`/api/task/${id}`);
+}
+
 export async function createTask(input: CreateTaskRequest): Promise<CreateTaskResponse> {
   return post<CreateTaskResponse>("/api/task", input);
 }
@@ -33,6 +37,17 @@ export async function batchCreateTasks(
   source?: string
 ): Promise<{ success: boolean; created: number; tasks: Task[] }> {
   return post("/api/task/batch", { tasks, source: source ?? "tomos-web" });
+}
+
+export async function createSubtask(
+  parentId: string,
+  taskText: string
+): Promise<CreateTaskResponse> {
+  return post<CreateTaskResponse>("/api/task", {
+    task: taskText,
+    source: "tomos-web",
+    parentId,
+  });
 }
 
 export async function getSmartSurface(): Promise<{

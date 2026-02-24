@@ -3,15 +3,16 @@
 import type { TaskStatus, TaskPriority } from "@tomos/api";
 
 interface TaskFiltersProps {
-  status: TaskStatus | "all";
+  status: TaskStatus | "all" | "active";
   priority: TaskPriority | "all";
   search: string;
-  onStatusChange: (status: TaskStatus | "all") => void;
+  onStatusChange: (status: TaskStatus | "all" | "active") => void;
   onPriorityChange: (priority: TaskPriority | "all") => void;
   onSearchChange: (search: string) => void;
 }
 
-const statusOptions: Array<{ value: TaskStatus | "all"; label: string }> = [
+const statusOptions: Array<{ value: TaskStatus | "all" | "active"; label: string }> = [
+  { value: "active", label: "Active" },
   { value: "all", label: "All" },
   { value: "Inbox", label: "Inbox" },
   { value: "In Progress", label: "In Progress" },

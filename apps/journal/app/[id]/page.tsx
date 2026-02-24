@@ -4,7 +4,7 @@ import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEntry, useUpdateEntry, useDeleteEntry, useGenerateReflection } from "../../hooks/useJournal";
 import { MoodPicker } from "../../components/MoodPicker";
-import { Spinner, useToast } from "@tomos/ui";
+import { Spinner, useToast, MarkdownContent } from "@tomos/ui";
 import Link from "next/link";
 
 const moodEmoji: Record<string, string> = {
@@ -101,33 +101,6 @@ export default function EntryDetailPage({ params }: { params: Promise<{ id: stri
     } catch {
       toast("Failed to generate reflection", "error");
     }
-  };
-
-  // Render markdown-like formatting (bold, italic, headers, lists)
-  const renderContent = (text: string) => {
-    return text.split("\n").map((line, i) => {
-      // Headers
-      if (line.startsWith("### ")) return <h3 key={i} className="text-base font-semibold text-gray-900 mt-4 mb-1">{line.slice(4)}</h3>;
-      if (line.startsWith("## ")) return <h2 key={i} className="text-lg font-semibold text-gray-900 mt-4 mb-1">{line.slice(3)}</h2>;
-      if (line.startsWith("# ")) return <h1 key={i} className="text-xl font-bold text-gray-900 mt-4 mb-1">{line.slice(2)}</h1>;
-      // List items
-      if (line.startsWith("- ") || line.startsWith("* ")) return <li key={i} className="ml-4 list-disc text-gray-800">{formatInline(line.slice(2))}</li>;
-      // Empty line = paragraph break
-      if (line.trim() === "") return <div key={i} className="h-3" />;
-      // Regular line
-      return <p key={i} className="text-gray-800">{formatInline(line)}</p>;
-    });
-  };
-
-  const formatInline = (text: string) => {
-    // Bold
-    const parts = text.split(/(\*\*[^*]+\*\*)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
-      }
-      return part;
-    });
   };
 
   return (
@@ -227,9 +200,7 @@ export default function EntryDetailPage({ params }: { params: Promise<{ id: stri
         <>
           {/* Entry content with markdown rendering */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4 shadow-sm">
-            <div className="text-[15px] leading-relaxed space-y-0.5">
-              {renderContent(entry.content)}
-            </div>
+            <MarkdownContent content={entry.content} className="text-[15px] leading-relaxed" />
           </div>
 
           {/* Themes */}

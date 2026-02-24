@@ -12,6 +12,9 @@ export interface Task {
   dueDate: string | null;
   energy: string | null;
   time: string | null;
+  parentId?: string | null;
+  subtaskCount?: number;
+  subtasks?: Task[];
 }
 
 export interface CreateTaskRequest {

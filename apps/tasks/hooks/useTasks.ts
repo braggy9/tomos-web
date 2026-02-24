@@ -14,15 +14,39 @@ export function useTasks() {
   });
 }
 
+export function useTask(id: string) {
+  return useQuery({
+    queryKey: ["task", id],
+    queryFn: () => tasks.getTask(id),
+    select: (data) => data.task,
+  });
+}
+
+export function useCreateSubtask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ parentId, taskText }: { parentId: string; taskText: string }) =>
+      tasks.createSubtask(parentId, taskText),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: TASKS_KEY });
+      queryClient.invalidateQueries({ queryKey: ["task", variables.parentId] });
+    },
+  });
+}
+
 export function useFilteredTasks(filters: {
-  status?: TaskStatus | "all";
+  status?: TaskStatus | "all" | "active";
   priority?: TaskPriority | "all";
   search?: string;
 }) {
   const query = useTasks();
 
   const filtered = query.data?.filter((task) => {
-    if (filters.status && filters.status !== "all" && task.status !== filters.status) {
+    if (filters.status && filters.status === "active" && task.status === "Done") {
+      return false;
+    }
+    if (filters.status && filters.status !== "all" && filters.status !== "active" && task.status !== filters.status) {
       return false;
     }
     if (filters.priority && filters.priority !== "all" && task.priority !== filters.priority) {
