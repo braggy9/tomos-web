@@ -7,6 +7,7 @@ import { useFilteredNotes } from "../hooks/useNotes";
 import { NoteFilters } from "../components/NoteFilters";
 import { NoteRow } from "../components/NoteRow";
 import { Spinner, EmptyState, Button } from "@tomos/ui";
+import { AppSwitcher } from "../components/AppSwitcher";
 
 type FilterValue = NoteStatus | "all" | "pinned" | "confidential";
 
@@ -19,7 +20,10 @@ export default function NotesPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Notes</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-gray-900">Notes</h1>
+          <AppSwitcher />
+        </div>
         <Link href="/new">
           <Button size="sm">New Note</Button>
         </Link>

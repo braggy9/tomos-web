@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { MatterStatus, MatterPriority, MatterType } from "@tomos/api";
 import { useFilteredMatters } from "../hooks/useMatters";
 import { Badge, Spinner, EmptyState, Button, Card } from "@tomos/ui";
+import { AppSwitcher } from "../components/AppSwitcher";
 
 export default function MattersPage() {
   const [status, setStatus] = useState<MatterStatus | "all">("all");
@@ -41,7 +42,10 @@ export default function MattersPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Matters</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-gray-900">Matters</h1>
+          <AppSwitcher />
+        </div>
         <Link href="/new">
           <Button size="sm">New Matter</Button>
         </Link>

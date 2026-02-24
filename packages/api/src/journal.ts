@@ -45,6 +45,18 @@ export async function deleteEntry(
   return del(`/api/journal/entries/${id}`);
 }
 
+// ─── Search ──────────────────────────────────────
+
+export async function searchEntries(params: {
+  q: string;
+  tags?: string;
+  mood?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ success: boolean; data: JournalEntry[]; pagination: Pagination }> {
+  return get("/api/journal/search", params);
+}
+
 // ─── AI Reflection ───────────────────────────────
 
 export async function generateReflection(

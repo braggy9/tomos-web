@@ -6,6 +6,7 @@ import { useFilteredTasks } from "../hooks/useTasks";
 import { QuickAdd } from "../components/QuickAdd";
 import { TaskFilters } from "../components/TaskFilters";
 import { TaskList } from "../components/TaskList";
+import { AppSwitcher } from "../components/AppSwitcher";
 
 export default function TasksPage() {
   const [status, setStatus] = useState<TaskStatus | "all">("all");
@@ -21,7 +22,10 @@ export default function TasksPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Tasks</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-gray-900">Tasks</h1>
+          <AppSwitcher />
+        </div>
         {tasks && (
           <span className="text-sm text-gray-500">{tasks.length} tasks</span>
         )}
