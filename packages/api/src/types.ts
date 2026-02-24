@@ -430,6 +430,132 @@ export interface JournalSummary {
   createdAt: string;
 }
 
+// ─── Fitness Types ───────────────────────────────
+
+export type WeekType = "kid" | "non-kid";
+export type SleepQuality = "bad" | "ok" | "great";
+export type RecoveryEnergy = "low" | "medium" | "high";
+export type Soreness = "none" | "mild" | "sore";
+
+export interface Exercise {
+  id: string;
+  name: string;
+  category: string;
+  equipment: string[];
+  primaryMuscles: string[];
+  movementPattern: string | null;
+  cues: string | null;
+  spineNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExerciseSet {
+  id: string;
+  setNumber: number;
+  weight: number | null;
+  reps: number | null;
+  time: number | null;
+  distance: number | null;
+  rpe: number | null;
+  notes: string | null;
+}
+
+export interface SessionExercise {
+  id: string;
+  order: number;
+  exercise: Exercise;
+  sets: ExerciseSet[];
+}
+
+export interface GymSession {
+  id: string;
+  date: string;
+  sessionType: string;
+  duration: number | null;
+  notes: string | null;
+  overallRPE: number | null;
+  weekType: string | null;
+  completedAt: string | null;
+  taskId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  sessionExercises: SessionExercise[];
+}
+
+export interface ExerciseSuggestion {
+  name: string;
+  exerciseId: string;
+  suggestedWeight: number;
+  lastWeight: number | null;
+  rationale: string;
+}
+
+export interface SessionSuggestion {
+  recommendedSession: string;
+  rationale: string;
+  weekType: WeekType;
+  runningLoadLast7Days: number;
+  lastSession: {
+    type: string;
+    date: string;
+    daysAgo: number;
+  } | null;
+  suggestedExercises: ExerciseSuggestion[];
+}
+
+export interface RunningStats {
+  last7Days: {
+    totalDistance: number;
+    totalDuration: number;
+    trainingLoad: number;
+    sessions: number;
+  };
+  last30Days: {
+    totalDistance: number;
+    totalDuration: number;
+    trainingLoad: number;
+    sessions: number;
+  };
+  loadTrend: "increasing" | "decreasing" | "stable";
+}
+
+export interface RecoveryCheckin {
+  id: string;
+  date: string;
+  sleepQuality: SleepQuality;
+  energy: RecoveryEnergy;
+  soreness: Soreness;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QuickLogExercise {
+  name: string;
+  weight?: number;
+  sets: number;
+  reps?: number;
+  time?: number;
+  distance?: number;
+  rpe?: number;
+}
+
+export interface QuickLogRequest {
+  sessionType: string;
+  weekType?: WeekType;
+  notes?: string;
+  overallRPE?: number;
+  exercises: QuickLogExercise[];
+}
+
+export interface CreateRecoveryRequest {
+  sleepQuality: SleepQuality;
+  energy: RecoveryEnergy;
+  soreness: Soreness;
+  notes?: string;
+}
+
 // ─── Generic API Response ─────────────────────────
 
 export interface ApiResponse<T> {
