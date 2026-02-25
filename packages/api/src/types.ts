@@ -147,6 +147,80 @@ export interface Pagination {
   hasMore: boolean;
 }
 
+// ─── Journal Types ────────────────────────────────
+
+export interface JournalEntry {
+  id: string;
+  content: string;
+  title?: string;
+  excerpt?: string;
+  wordCount: number;
+  mood?: string;
+  energy?: string;
+  reflection?: string;
+  themes: string[];
+  tags: string[];
+  entryDate: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JournalConversation {
+  id: string;
+  entryId?: string;
+  title?: string;
+  mode: string;
+  createdAt: string;
+  updatedAt: string;
+  messages?: JournalMessage[];
+}
+
+export interface JournalMessage {
+  id: string;
+  conversationId: string;
+  role: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface JournalInsights {
+  totalEntries: number;
+  streak: number;
+  moodDistribution: Record<string, number>;
+  topThemes: Array<{ theme: string; count: number }>;
+  avgWordCount: number;
+  weeklyRate: number;
+}
+
+export interface JournalSummary {
+  id: string;
+  type: string;
+  periodStart: string;
+  periodEnd: string;
+  content: string;
+  themes: string[];
+  moodPattern?: string;
+  insights?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface CreateJournalEntryRequest {
+  content: string;
+  title?: string;
+  mood?: string;
+  energy?: string;
+  tags?: string[];
+  entryDate?: string;
+}
+
+export interface UpdateJournalEntryRequest {
+  content?: string;
+  title?: string;
+  mood?: string;
+  energy?: string;
+  tags?: string[];
+}
+
 // ─── Matter Types ─────────────────────────────────
 
 export type MatterStatus = "active" | "on_hold" | "completed" | "archived";
