@@ -3,6 +3,4 @@ export * from "./client";
 export * as tasks from "./tasks";
 export * as notes from "./notes";
 export * as matters from "./matters";
-export * as journal from "./journal";
-export * as calendar from "./calendar";
 export * as fitness from "./fitness";

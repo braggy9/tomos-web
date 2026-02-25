@@ -1,20 +1,30 @@
 // ─── Task Types ───────────────────────────────────
 
-export type TaskStatus = "Inbox" | "In Progress" | "Done";
-export type TaskPriority = "Urgent" | "Important" | "Someday";
+export type TaskStatus = "todo" | "in_progress" | "done" | "blocked";
+export type TaskPriority = "low" | "medium" | "high" | "urgent";
+
+export interface TaskTag {
+  tag: { id: string; name: string; color?: string | null };
+}
+
+export interface TaskProject {
+  id: string;
+  title: string;
+  color?: string | null;
+}
 
 export interface Task {
   id: string;
   title: string;
+  description?: string | null;
   status: TaskStatus;
-  priority: TaskPriority | null;
-  context: string[];
-  dueDate: string | null;
-  energy: string | null;
-  time: string | null;
-  parentId?: string | null;
-  subtaskCount?: number;
-  subtasks?: Task[];
+  priority: TaskPriority;
+  dueDate?: string | null;
+  completedAt?: string | null;
+  project?: TaskProject | null;
+  tags: TaskTag[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateTaskRequest {
@@ -48,6 +58,8 @@ export interface UpdateTaskRequest {
   priority?: string;
   dueDate?: string | null;
   context?: string[];
+  tags?: string[];
+  description?: string;
 }
 
 export interface AllTasksResponse {
@@ -342,105 +354,12 @@ export interface SmartSurfaceRecommendation {
   source: string;
 }
 
-// ─── Journal Types ───────────────────────────────
-
-export type JournalMood = "great" | "good" | "okay" | "low" | "rough";
-export type JournalEnergy = "high" | "medium" | "low";
-
-export interface JournalEntry {
-  id: string;
-  content: string;
-  title?: string | null;
-  excerpt?: string | null;
-  wordCount: number;
-  mood?: JournalMood | null;
-  energy?: JournalEnergy | null;
-  reflection?: string | null;
-  themes: string[];
-  tags: string[];
-  entryDate: string;
-  createdAt: string;
-  updatedAt: string;
-  conversations?: { id: string; title?: string | null; createdAt: string }[];
-}
-
-export interface CreateJournalEntryRequest {
-  content: string;
-  title?: string;
-  mood?: JournalMood;
-  energy?: JournalEnergy;
-  themes?: string[];
-  tags?: string[];
-  entryDate?: string;
-}
-
-export interface UpdateJournalEntryRequest {
-  content?: string;
-  title?: string;
-  mood?: JournalMood;
-  energy?: JournalEnergy;
-  themes?: string[];
-  tags?: string[];
-  reflection?: string;
-  entryDate?: string;
-}
-
-export interface JournalConversation {
-  id: string;
-  entryId?: string | null;
-  title?: string | null;
-  mode: string;
-  createdAt: string;
-  updatedAt: string;
-  entry?: { id: string; title?: string | null; content: string; mood?: string | null; entryDate: string } | null;
-  messages?: JournalMessage[];
-}
-
-export interface JournalMessage {
-  id: string;
-  conversationId: string;
-  role: "user" | "assistant";
-  content: string;
-  createdAt: string;
-}
-
-export interface JournalInsights {
-  period: { days: number; from: string; to: string };
-  stats: {
-    totalEntries: number;
-    periodEntries: number;
-    currentStreak: number;
-    entriesPerWeek: number;
-    totalWords: number;
-    avgWordsPerEntry: number;
-    conversationsThisPeriod: number;
-  };
-  moods: Record<string, number>;
-  energy: Record<string, number>;
-  topThemes: { theme: string; count: number }[];
-  moodTimeline: { date: string; mood: string; energy?: string | null }[];
-}
-
-export interface JournalSummary {
-  id: string;
-  type: string;
-  periodStart: string;
-  periodEnd: string;
-  content: string;
-  themes: string[];
-  moodPattern?: string | null;
-  insights?: Record<string, unknown> | null;
-  createdAt: string;
-}
-
 // ─── Fitness Types ───────────────────────────────
 
-export type WeekType = "kid" | "non-kid";
-export type SleepQuality = "bad" | "ok" | "great";
-export type RecoveryEnergy = "low" | "medium" | "high";
-export type Soreness = "none" | "mild" | "sore";
+export type FitnessWeekType = "kid" | "non-kid";
+export type FitnessLoadFactor = "low" | "moderate" | "high";
 
-export interface Exercise {
+export interface FitnessExercise {
   id: string;
   name: string;
   category: string;
@@ -448,12 +367,9 @@ export interface Exercise {
   primaryMuscles: string[];
   movementPattern: string | null;
   cues: string | null;
-  spineNotes: string | null;
-  createdAt: string;
-  updatedAt: string;
 }
 
-export interface ExerciseSet {
+export interface FitnessExerciseSet {
   id: string;
   setNumber: number;
   weight: number | null;
@@ -464,14 +380,15 @@ export interface ExerciseSet {
   notes: string | null;
 }
 
-export interface SessionExercise {
+export interface FitnessSessionExercise {
   id: string;
   order: number;
-  exercise: Exercise;
-  sets: ExerciseSet[];
+  exerciseId: string;
+  exercise: FitnessExercise;
+  sets: FitnessExerciseSet[];
 }
 
-export interface GymSession {
+export interface FitnessSession {
   id: string;
   date: string;
   sessionType: string;
@@ -480,34 +397,127 @@ export interface GymSession {
   overallRPE: number | null;
   weekType: string | null;
   completedAt: string | null;
-  taskId: string | null;
+  sessionExercises?: FitnessSessionExercise[];
   createdAt: string;
-  updatedAt: string;
-  sessionExercises: SessionExercise[];
 }
 
-export interface ExerciseSuggestion {
+export interface FitnessExerciseSuggestion {
   name: string;
   exerciseId: string;
   suggestedWeight: number;
+  suggestedSets?: number;
+  suggestedReps?: number;
+  confidence?: "low" | "medium" | "high";
   lastWeight: number | null;
   rationale: string;
 }
 
-export interface SessionSuggestion {
+export interface FitnessSessionSuggestion {
   recommendedSession: string;
   rationale: string;
-  weekType: WeekType;
+  weekType: FitnessWeekType;
   runningLoadLast7Days: number;
-  lastSession: {
-    type: string;
-    date: string;
-    daysAgo: number;
-  } | null;
-  suggestedExercises: ExerciseSuggestion[];
+  runningContext?: {
+    acwr: number;
+    trend: "increasing" | "decreasing" | "stable";
+    weeklyLoad: number;
+    recommendation: string;
+  };
+  frequency?: { thisWeek: number; thisMonth: number };
+  lastSession: { type: string; date: string; daysAgo: number } | null;
+  suggestedExercises: FitnessExerciseSuggestion[];
+  wod?: {
+    name: string;
+    format: string;
+    duration: number | null;
+    description: string;
+  };
 }
 
-export interface RunningStats {
+export interface FitnessRunningLoadContext {
+  weeklyLoad: number;
+  acwr: number;
+  acuteLoad: number;
+  chronicLoad: number;
+  trend: "increasing" | "decreasing" | "stable";
+  loadFactor: FitnessLoadFactor;
+  recommendation: string;
+}
+
+export interface FitnessRecoveryCheckIn {
+  id: string;
+  date: string;
+  sleepQuality: number;
+  soreness: number;
+  energy: number;
+  motivation: number;
+  hoursSlept: number | null;
+  notes: string | null;
+  readinessScore: number | null;
+  createdAt: string;
+}
+
+export interface CreateRecoveryCheckInRequest {
+  sleepQuality: number;
+  soreness: number;
+  energy: number;
+  motivation: number;
+  hoursSlept?: number;
+  notes?: string;
+}
+
+export interface FitnessNutritionLog {
+  id: string;
+  date: string;
+  proteinRating: number | null;
+  hydrationRating: number | null;
+  vegetableRating: number | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface CreateNutritionLogRequest {
+  proteinRating?: number;
+  hydrationRating?: number;
+  vegetableRating?: number;
+  notes?: string;
+}
+
+export interface FitnessProgressData {
+  exerciseId: string;
+  exerciseName: string;
+  dataPoints: Array<{
+    date: string;
+    weight: number;
+    reps: number | null;
+    rpe: number | null;
+  }>;
+}
+
+export interface FitnessProgressSummary {
+  totalSessions: number;
+  weeklyRate: number;
+  currentStreak: number;
+  personalRecords: Array<{
+    exerciseName: string;
+    weight: number;
+    date: string;
+  }>;
+  sessionsThisWeek: number;
+  sessionsThisMonth: number;
+}
+
+export interface FitnessDailyPlan {
+  headline: string;
+  shouldTrain: boolean;
+  suggestion: FitnessSessionSuggestion | null;
+  recoveryScore: number | null;
+  nutritionNudge: string | null;
+  runningContext: FitnessRunningLoadContext;
+  context: string;
+}
+
+export interface FitnessRunningStats {
   last7Days: {
     totalDistance: number;
     totalDuration: number;
@@ -523,40 +533,20 @@ export interface RunningStats {
   loadTrend: "increasing" | "decreasing" | "stable";
 }
 
-export interface RecoveryCheckin {
-  id: string;
-  date: string;
-  sleepQuality: SleepQuality;
-  energy: RecoveryEnergy;
-  soreness: Soreness;
-  notes: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface QuickLogExercise {
-  name: string;
-  weight?: number;
-  sets: number;
-  reps?: number;
-  time?: number;
-  distance?: number;
-  rpe?: number;
-}
-
-export interface QuickLogRequest {
+export interface FitnessQuickLogRequest {
   sessionType: string;
-  weekType?: WeekType;
+  weekType?: FitnessWeekType;
   notes?: string;
   overallRPE?: number;
-  exercises: QuickLogExercise[];
-}
-
-export interface CreateRecoveryRequest {
-  sleepQuality: SleepQuality;
-  energy: RecoveryEnergy;
-  soreness: Soreness;
-  notes?: string;
+  exercises: Array<{
+    name: string;
+    weight?: number;
+    sets: number;
+    reps?: number;
+    time?: number;
+    distance?: number;
+    rpe?: number;
+  }>;
 }
 
 // ─── Generic API Response ─────────────────────────
