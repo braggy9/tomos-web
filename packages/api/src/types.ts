@@ -580,6 +580,177 @@ export interface CreateRecoveryRequest {
   notes?: string;
 }
 
+
+// ─── Fitness Types (Fitness* prefix for clarity) ──────────────────────────────
+
+export interface FitnessExercise {
+  id: string;
+  name: string;
+  category: string;
+  equipment: string[];
+  primaryMuscles: string[];
+  movementPattern: string | null;
+  cues: string | null;
+  spineNotes: string | null;
+}
+
+export interface FitnessExerciseSet {
+  id: string;
+  setNumber: number;
+  weight: number | null;
+  reps: number | null;
+  time: number | null;
+  distance: number | null;
+  rpe: number | null;
+  notes: string | null;
+}
+
+export interface FitnessSessionExercise {
+  id: string;
+  order: number;
+  exercise: FitnessExercise;
+  sets: FitnessExerciseSet[];
+}
+
+export interface FitnessSession {
+  id: string;
+  date: string;
+  sessionType: string;
+  duration: number | null;
+  notes: string | null;
+  overallRPE: number | null;
+  weekType: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  sessionExercises: FitnessSessionExercise[];
+}
+
+export interface FitnessRecoveryCheckIn {
+  id: string;
+  date: string;
+  sleepQuality: number;   // 1-5
+  soreness: number;       // 1-5 (1=very sore, 5=fresh)
+  energy: number;         // 1-5
+  motivation: number;     // 1-5
+  hoursSlept: number | null;
+  notes: string | null;
+  readinessScore: number | null;
+  createdAt: string;
+}
+
+export interface CreateRecoveryCheckInRequest {
+  sleepQuality: number;
+  soreness: number;
+  energy: number;
+  motivation: number;
+  hoursSlept?: number;
+  notes?: string;
+}
+
+export interface FitnessNutritionLog {
+  id: string;
+  date: string;
+  proteinRating: number | null;
+  hydrationRating: number | null;
+  vegetableRating: number | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface CreateNutritionLogRequest {
+  proteinRating?: number;
+  hydrationRating?: number;
+  vegetableRating?: number;
+  notes?: string;
+}
+
+export interface FitnessProgressData {
+  exerciseId: string;
+  exerciseName: string;
+  dataPoints: Array<{
+    date: string;
+    weight: number;
+    reps: number | null;
+    rpe: number | null;
+  }>;
+}
+
+export interface FitnessProgressSummary {
+  totalSessions: number;
+  weeklyRate: number;
+  currentStreak: number;
+  personalRecords: Array<{
+    exerciseName: string;
+    weight: number;
+    date: string;
+  }>;
+  sessionsThisWeek: number;
+  sessionsThisMonth: number;
+}
+
+export interface FitnessRunningLoadContext {
+  weeklyLoad: number;
+  acwr: number;
+  acuteLoad: number;
+  chronicLoad: number;
+  trend: "increasing" | "decreasing" | "stable";
+  loadFactor: "low" | "moderate" | "high";
+  recommendation: string;
+}
+
+export interface FitnessRunningStats {
+  last7Days: {
+    totalDistance: number;
+    totalDuration: number;
+    trainingLoad: number;
+    sessions: number;
+  };
+  last30Days: {
+    totalDistance: number;
+    totalDuration: number;
+    trainingLoad: number;
+    sessions: number;
+  };
+  loadTrend: "increasing" | "decreasing" | "stable";
+}
+
+export interface FitnessSessionSuggestion {
+  recommendedSession: string;
+  rationale: string;
+  weekType: WeekType;
+  runningLoadLast7Days: number;
+  runningContext?: {
+    acwr: number;
+    trend: "increasing" | "decreasing" | "stable";
+    weeklyLoad: number;
+    recommendation: string;
+  };
+  frequency?: {
+    thisWeek: number;
+    thisMonth: number;
+  };
+  lastSession: {
+    type: string;
+    date: string;
+    daysAgo: number;
+  } | null;
+  suggestedExercises: ExerciseSuggestion[];
+  wod?: WodInfo;
+}
+
+export interface FitnessDailyPlan {
+  headline: string;
+  shouldTrain: boolean;
+  suggestion: FitnessSessionSuggestion | null;
+  recoveryScore: number | null;
+  nutritionNudge: string | null;
+  runningContext: FitnessRunningLoadContext;
+  context: string;
+}
+
+// Alias for backwards compatibility
+export type FitnessQuickLogRequest = QuickLogRequest;
+
 // ─── Generic API Response ─────────────────────────
 
 export interface ApiResponse<T> {
