@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Providers } from "./providers";
 import { BottomNav } from "../components/BottomNav";
+import { KeyboardShortcuts } from "../components/KeyboardShortcuts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -39,6 +40,7 @@ export default function RootLayout({
           }}
         />
         <Providers>
+          <KeyboardShortcuts />
           <main className="pb-20 lg:pb-0 lg:pl-56">
             <div className="mx-auto max-w-2xl lg:max-w-4xl px-4 py-4">
               {children}

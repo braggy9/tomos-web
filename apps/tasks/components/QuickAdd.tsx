@@ -12,7 +12,9 @@ export function QuickAdd() {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) {
+      const tag = (e.target as HTMLElement).tagName;
+      const notEditing = !["INPUT", "TEXTAREA", "SELECT"].includes(tag);
+      if ((e.key === "/" || (e.metaKey && e.key === "n")) && notEditing) {
         e.preventDefault();
         inputRef.current?.focus();
       }
