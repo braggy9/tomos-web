@@ -748,8 +748,9 @@ export interface FitnessDailyPlan {
   context: string;
 }
 
-// Alias for backwards compatibility
+// Aliases for backwards compatibility
 export type FitnessQuickLogRequest = QuickLogRequest;
+export type FitnessWeekType = WeekType;
 
 // ─── Generic API Response ─────────────────────────
 
