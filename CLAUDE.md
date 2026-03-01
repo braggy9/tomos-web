@@ -143,3 +143,49 @@ pnpm turbo build --filter=@tomos/tasks... --filter=@tomos/notes... --filter=@tom
 ## Environment
 
 No `.env.local` needed — all apps call the public backend API at `https://tomos-task-api.vercel.app`. No authentication required (personal tools).
+
+## Keyboard Shortcuts
+
+| App | Shortcut | Action |
+|-----|----------|--------|
+| Tasks | `/` or `Cmd+N` | Focus quick-add input |
+| Notes | `Cmd+N` | New note → `/new` |
+| Matters | `Cmd+N` | New matter → `/new` |
+| Journal | `Cmd+N` | New entry → `/new` |
+| Fitness | `Cmd+N` | New session log → `/log` |
+| Journal chat | `Enter` / `Shift+Enter` | Send / new line |
+
+All implemented via `KeyboardShortcuts.tsx` component in each app's `components/` directory, mounted in `app/layout.tsx`. Pattern: `document.addEventListener("keydown", handler)` — no external library.
+
+## @tomos/api Package Notes
+
+- `packages/api/src/types.ts` exports ALL types — everything in `index.ts` is `export * from "./types"`
+- `packages/api/src/index.ts` exports modules as namespaces: `tasks`, `notes`, `matters`, `fitness`, `calendar`
+- Fitness types use `Fitness*` prefix convention (`FitnessDailyPlan`, `FitnessSession`, etc.)
+- `FitnessWeekType` = alias for `WeekType`; `FitnessQuickLogRequest` = alias for `QuickLogRequest`
+- If adding new API modules, remember to add `export * as <name> from "./<name>"` to `index.ts`
+
+## Deployment
+
+**IMPORTANT: iCloud Drive "Optimize Mac Storage" evicts project files, breaking git and Vercel CLI.**
+
+Workaround — clone to `/tmp` and deploy from there:
+```bash
+# Clone fresh (outside iCloud)
+cd /tmp && git clone git@github.com:braggy9/tomos-web.git tomos-web-fresh
+
+# Make changes, then copy files in and commit from /tmp
+cp ~/Desktop/Projects/tomos-web/<file> /tmp/tomos-web-fresh/<file>
+cd /tmp/tomos-web-fresh && git add . && git commit -m "..." && git push
+
+# Deploy each app by re-linking Vercel project
+vercel link --project tomos-tasks --yes && vercel --prod --yes
+vercel link --project tomos-matters --yes && vercel --prod --yes
+vercel link --project tomos-fitness --yes && vercel --prod --yes
+vercel link --project tomos-journal --yes && vercel --prod --yes
+vercel link --project tomos-notes --yes && vercel --prod --yes
+```
+
+Permanent fix: right-click `~/Desktop/Projects` in Finder → **Keep Downloaded**
+
+*Last updated: 2026-03-02*
