@@ -206,7 +206,7 @@ export default function EntryDetailPage({ params }: { params: Promise<{ id: stri
           {/* Themes */}
           {entry.themes.length > 0 && (
             <div className="flex gap-1.5 flex-wrap mb-4">
-              {entry.themes.map((theme) => (
+              {entry.themes.map((theme: string) => (
                 <span
                   key={theme}
                   className="text-xs px-2.5 py-1 rounded-full bg-brand-50 text-brand-600 border border-brand-100"

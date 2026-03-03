@@ -5,3 +5,4 @@ export * as notes from "./notes";
 export * as matters from "./matters";
 export * as fitness from "./fitness";
 export * as calendar from "./calendar";
+export * as journal from "./journal";
