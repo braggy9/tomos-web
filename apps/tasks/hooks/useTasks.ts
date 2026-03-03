@@ -117,7 +117,7 @@ export function useCompleteTask() {
         queryClient.setQueryData(TASKS_KEY, context.previous);
       }
     },
-    onSettled: () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_KEY });
     },
   });

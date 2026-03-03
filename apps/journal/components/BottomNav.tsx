@@ -111,6 +111,20 @@ export function BottomNav() {
           })}
         </nav>
 
+        {/* Markdown reference */}
+        <div className="p-3 border-t border-gray-100">
+          <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider px-3 mb-2">Markdown</p>
+          <div className="px-3 space-y-1">
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">⌘N</span> — new entry</p>
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500"># </span> Heading 1</p>
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">## </span> Heading 2</p>
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">**bold**</span> <span className="font-mono text-gray-500">*italic*</span></p>
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">&gt; </span> blockquote</p>
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">- </span> list item</p>
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">- [ ] </span> checkbox</p>
+          </div>
+        </div>
+
         {/* Cross-app links */}
         <div className="p-3 border-t border-gray-100">
           <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider px-3 mb-2">

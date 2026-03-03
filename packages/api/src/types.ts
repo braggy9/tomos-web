@@ -139,15 +139,8 @@ export interface Pagination {
 
 export type MatterStatus = "active" | "on_hold" | "completed" | "archived";
 export type MatterPriority = "low" | "medium" | "high" | "urgent";
-export type MatterType =
-  | "contract"
-  | "dispute"
-  | "compliance"
-  | "advisory"
-  | "employment"
-  | "ip"
-  | "regulatory";
-export type Jurisdiction = "NSW" | "VIC" | "Commonwealth" | "International";
+export type MatterType = string; // Free text — DB accepts any value
+export type Jurisdiction = string; // Free text — DB accepts any value; common: NSW, VIC, QLD, WA, SA, ACT, NT, TAS, Commonwealth, Federal Court, International
 export type BillingStatus = "billable" | "non_billable" | "fixed_fee" | "time_and_materials";
 
 export interface MatterCounts {
@@ -189,6 +182,8 @@ export interface Matter {
   practiceArea?: string | null;
   jurisdiction?: Jurisdiction | null;
   tags: string[];
+  counterparty?: string | null;
+  counterpartyContact?: string | null;
   tasks?: MatterTask[];
   _count?: MatterCounts;
 }
@@ -211,6 +206,8 @@ export interface CreateMatterRequest {
   practiceArea?: string;
   jurisdiction?: Jurisdiction;
   tags?: string[];
+  counterparty?: string;
+  counterpartyContact?: string;
   createdBy?: string;
 }
 
@@ -232,6 +229,8 @@ export interface UpdateMatterRequest {
   practiceArea?: string;
   jurisdiction?: Jurisdiction;
   tags?: string[];
+  counterparty?: string;
+  counterpartyContact?: string;
   updatedBy?: string;
 }
 
@@ -748,9 +747,8 @@ export interface FitnessDailyPlan {
   context: string;
 }
 
-// Aliases for backwards compatibility
+// Alias for backwards compatibility
 export type FitnessQuickLogRequest = QuickLogRequest;
-export type FitnessWeekType = WeekType;
 
 // ─── Generic API Response ─────────────────────────
 

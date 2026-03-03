@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCreateEntry } from "../../hooks/useJournal";
 import { MoodPicker } from "../../components/MoodPicker";
@@ -10,17 +10,32 @@ import Link from "next/link";
 const DRAFT_KEY = "tomos-journal-draft";
 
 interface Draft {
+  title: string;
   content: string;
   mood: string | null;
   energy: string | null;
   savedAt: number;
 }
 
+type MarkdownAction = { prefix: string; suffix?: string; placeholder?: string };
+
+const TOOLBAR_BUTTONS: Array<{ label: string; title: string } & MarkdownAction> = [
+  { label: "H1", title: "Heading 1", prefix: "# ", placeholder: "Heading" },
+  { label: "H2", title: "Heading 2", prefix: "## ", placeholder: "Heading" },
+  { label: "B", title: "Bold", prefix: "**", suffix: "**", placeholder: "bold text" },
+  { label: "I", title: "Italic", prefix: "*", suffix: "*", placeholder: "italic text" },
+  { label: "›", title: "Blockquote", prefix: "> ", placeholder: "quote" },
+  { label: "—", title: "List item", prefix: "- ", placeholder: "item" },
+  { label: "☐", title: "Checkbox", prefix: "- [ ] ", placeholder: "task" },
+];
+
 export default function NewEntryPage() {
   const router = useRouter();
   const toast = useToast().toast;
   const createEntry = useCreateEntry();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [mood, setMood] = useState<string | null>(null);
   const [energy, setEnergy] = useState<string | null>(null);
@@ -34,6 +49,7 @@ export default function NewEntryPage() {
         const draft: Draft = JSON.parse(saved);
         // Only restore if less than 24 hours old
         if (Date.now() - draft.savedAt < 24 * 60 * 60 * 1000) {
+          setTitle(draft.title || "");
           setContent(draft.content);
           setMood(draft.mood);
           setEnergy(draft.energy);
@@ -47,11 +63,11 @@ export default function NewEntryPage() {
 
   // Auto-save draft every 2 seconds when content changes
   const saveDraft = useCallback(() => {
-    if (content.trim()) {
-      const draft: Draft = { content, mood, energy, savedAt: Date.now() };
+    if (content.trim() || title.trim()) {
+      const draft: Draft = { title, content, mood, energy, savedAt: Date.now() };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
     }
-  }, [content, mood, energy]);
+  }, [title, content, mood, energy]);
 
   useEffect(() => {
     const timer = setTimeout(saveDraft, 2000);
@@ -63,12 +79,32 @@ export default function NewEntryPage() {
     setHasDraft(false);
   };
 
+  const insertMarkdown = (prefix: string, suffix?: string, placeholder?: string) => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const selected = content.slice(start, end) || placeholder || "";
+    const suf = suffix ?? "";
+    const before = content.slice(0, start);
+    const after = content.slice(end);
+    const newContent = `${before}${prefix}${selected}${suf}${after}`;
+    setContent(newContent);
+    // Restore focus + set cursor after inserted text
+    requestAnimationFrame(() => {
+      el.focus();
+      const cursor = start + prefix.length + selected.length + suf.length;
+      el.setSelectionRange(cursor, cursor);
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
 
     try {
       const result = await createEntry.mutateAsync({
+        title: title.trim() || undefined,
         content: content.trim(),
         mood: mood as any,
         energy: energy as any,
@@ -84,6 +120,7 @@ export default function NewEntryPage() {
   const handleDiscard = () => {
     if (content.trim() && !confirm("Discard this entry?")) return;
     clearDraft();
+    setTitle("");
     setContent("");
     setMood(null);
     setEnergy(null);
@@ -133,6 +170,7 @@ export default function NewEntryPage() {
             type="button"
             onClick={() => {
               clearDraft();
+              setTitle("");
               setContent("");
               setMood(null);
               setEnergy(null);
@@ -155,9 +193,34 @@ export default function NewEntryPage() {
         />
       </div>
 
+      {/* Title */}
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Title (optional)"
+        className="w-full px-4 py-2.5 text-base font-semibold text-gray-900 placeholder-gray-300 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-200 transition-colors"
+      />
+
       {/* Content editor */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        {/* Markdown toolbar */}
+        <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-gray-100 bg-gray-50">
+          {TOOLBAR_BUTTONS.map((btn) => (
+            <button
+              key={btn.label}
+              type="button"
+              title={btn.title}
+              onClick={() => insertMarkdown(btn.prefix, btn.suffix, btn.placeholder)}
+              className="px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-white rounded transition-colors"
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
+
         <textarea
+          ref={textareaRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="What's on your mind..."

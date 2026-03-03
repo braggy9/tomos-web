@@ -70,7 +70,7 @@ export default function MatterDetailPage({ params }: { params: Promise<{ id: str
         </button>
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-bold text-gray-900 truncate">{matter.title}</h1>
-          <p className="text-sm text-gray-500">{matter.client} {matter.matterNumber && `· ${matter.matterNumber}`}</p>
+          <p className="text-sm text-gray-500">{matter.client}{matter.practiceArea && ` · ${matter.practiceArea}`}</p>
         </div>
       </div>
 
@@ -78,9 +78,8 @@ export default function MatterDetailPage({ params }: { params: Promise<{ id: str
       <div className="flex items-center gap-2 flex-wrap">
         <Badge variant="status" value={matter.status} />
         <Badge variant="priority" value={matter.priority} />
-        <Badge value={matter.type} />
+        {matter.practiceArea && <Badge value={matter.practiceArea} />}
         {matter.jurisdiction && <Badge value={matter.jurisdiction} />}
-        {matter.billingStatus && <Badge value={matter.billingStatus.replace(/_/g, " ")} />}
       </div>
 
       {/* Tab navigation */}
@@ -145,7 +144,7 @@ export default function MatterDetailPage({ params }: { params: Promise<{ id: str
                 <><dt className="text-gray-500">Client Contact</dt><dd className="text-gray-900">{matter.clientContact}</dd></>
               )}
               {matter.practiceArea && (
-                <><dt className="text-gray-500">Practice Area</dt><dd className="text-gray-900">{matter.practiceArea}</dd></>
+                <><dt className="text-gray-500">Category</dt><dd className="text-gray-900">{matter.practiceArea}</dd></>
               )}
               {matter.dueDate && (
                 <><dt className="text-gray-500">Due Date</dt><dd className="text-gray-900">{new Date(matter.dueDate).toLocaleDateString("en-AU")}</dd></>
@@ -158,6 +157,17 @@ export default function MatterDetailPage({ params }: { params: Promise<{ id: str
               )}
               {matter.teamMembers.length > 0 && (
                 <><dt className="text-gray-500">Team</dt><dd className="text-gray-900">{matter.teamMembers.join(", ")}</dd></>
+              )}
+              {(matter.counterparty || matter.counterpartyContact) && (
+                <div className="col-span-2 pt-2 border-t border-gray-100 mt-1">
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Other Side</p>
+                </div>
+              )}
+              {matter.counterparty && (
+                <><dt className="text-gray-500">Counterparty</dt><dd className="text-gray-900">{matter.counterparty}</dd></>
+              )}
+              {matter.counterpartyContact && (
+                <><dt className="text-gray-500">Their Contact</dt><dd className="text-gray-900">{matter.counterpartyContact}</dd></>
               )}
               <dt className="text-gray-500">Last Activity</dt>
               <dd className="text-gray-900">{new Date(matter.lastActivityAt).toLocaleString("en-AU")}</dd>

@@ -91,6 +91,18 @@ export function BottomNav() {
             );
           })}
         </nav>
+        {/* Quick add syntax */}
+        <div className="p-3 border-t border-gray-100">
+          <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider px-3 mb-2">Quick Add Syntax</p>
+          <div className="px-3 space-y-1">
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">/</span> or <span className="font-mono text-gray-500">⌘N</span> — focus input</p>
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">#urgent</span> <span className="font-mono text-gray-500">#high</span> — priority</p>
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">tomorrow 3pm</span> — due date</p>
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">next Friday</span> <span className="font-mono text-gray-500">in 2h</span></p>
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">@legal</span> <span className="font-mono text-gray-500">@work</span> — context</p>
+          </div>
+        </div>
+
         {/* Cross-app links */}
         <div className="p-3 border-t border-gray-100">
           <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider px-3 mb-2">TomOS Apps</p>

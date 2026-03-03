@@ -2,7 +2,7 @@
 
 ## What This Repo Is
 
-Four independent Next.js web apps for personal productivity, sharing a common design system and API client. Each app does one thing well, replacing the bloated TomOS Swift monolith.
+Six independent Next.js web apps for personal productivity, sharing a common design system and API client. Each app does one thing well, replacing the bloated TomOS Swift monolith. **This is the primary client for TomOS. Swift native apps are deprecated.**
 
 **Monorepo:** pnpm workspaces + Turborepo
 **Framework:** Next.js 15 (App Router)
@@ -14,15 +14,18 @@ Four independent Next.js web apps for personal productivity, sharing a common de
 
 **Local Path:** `/Users/tombragg/Desktop/Projects/tomos-web/`
 **Backend Repo:** `/Users/tombragg/Desktop/Projects/TomOS/`
+**Deprecated Native Apps:** `/Users/tombragg/Desktop/🖥️ TomOS/TomOS-Apps/` (Swift, no longer developed)
 
 ## Apps
 
 | App | URL | Port | Purpose |
 |-----|-----|------|---------|
-| Tasks | https://tomos-tasks.vercel.app | 3001 | Task management, brain dump, smart surface |
-| Notes | https://tomos-notes.vercel.app | 3002 | Professional notes with smart linking, templates |
+| Tasks | https://tomos-tasks.vercel.app | 3001 | Task management, subtasks, brain dump, smart surface |
+| Notes | https://tomos-notes.vercel.app | 3002 | Professional notes with smart linking, markdown rendering, templates |
 | Matters | https://tomos-matters.vercel.app | 3003 | Legal matter management |
 | Journal | https://tomos-journal.vercel.app | 3004 | Reflective journaling with AI companion |
+| Fitness | https://tomos-fitness.vercel.app | 3005 | Gym session logging, recovery check-ins, progressive overload |
+| Legal | https://tomos-legal.vercel.app | 3006 | Legal dashboard, clause library browser, contract review history |
 
 ## Structure
 
@@ -32,7 +35,9 @@ tomos-web/
 │   ├── tasks/          # @tomos/tasks — Task management
 │   ├── notes/          # @tomos/notes — Professional notes
 │   ├── matters/        # @tomos/matters — Legal matters
-│   └── journal/        # @tomos/journal — Journal + AI companion
+│   ├── journal/        # @tomos/journal — Journal + AI companion
+│   ├── fitness/        # @tomos/fitness — Gym session logging + recovery
+│   └── legal/          # @tomos/legal — Legal dashboard + clause library
 ├── packages/
 │   ├── api/            # @tomos/api — Shared API client + types
 │   ├── ui/             # @tomos/ui — Shared React components
@@ -51,11 +56,13 @@ tomos-web/
 - `src/notes.ts` — Notes API functions
 - `src/matters.ts` — Matters API functions
 - `src/journal.ts` — Journal API functions (entries, chat, insights, search, summaries)
+- `src/fitness.ts` — Fitness API functions (sessions, exercises, suggestions, recovery, running)
 - `src/index.ts` — Re-exports all modules
 
 ### @tomos/ui (`packages/ui/`)
-- Badge, Button, Card, Input, EmptyState, Spinner, Toast
-- Toast API: `toast("message")` or `toast("message", "error")`
+- Badge, Button, Card, Input, EmptyState, Spinner, Toast, MarkdownContent
+- `MarkdownContent` — shared markdown renderer (react-markdown + remark-gfm). Used in Notes + Journal detail pages. Styled via `components` prop (no @tailwindcss/typography needed). Supports headers, bold, italic, code blocks, tables, task lists, blockquotes, links.
+- Toast API: `const toast = useToast().toast;` then `toast("message")` or `toast("message", "error")`
 - Brand color: violet-600 (`#7C3AED`)
 
 ## Design System
@@ -102,12 +109,42 @@ Each app deploys as a separate Vercel project from this monorepo. To deploy:
 # (Same pattern for notes and matters)
 ```
 
+## Tasks App Details
+
+### Features (Phase 2, 2026-02-26)
+- Default filter: "Active" (Inbox + In Progress, excludes Done). "All" and "Done" still available.
+- Header shows "X active / Y total" count
+- Completion circles: `w-6 h-6` with `hover:scale-110` + violet hover
+- **Subtasks**: One level deep via `parentId` self-relation on Task model
+  - TaskRow shows subtask count badge (violet pill)
+  - Task detail page: subtask list with completion toggles + quick-add input
+  - Main list filters out child tasks (`!t.parentId`)
+  - `useTask(id)` hook fetches single task with subtasks from `GET /api/task/[id]`
+  - `useCreateSubtask()` hook creates subtask via `POST /api/task` with `parentId`
+
+### Tasks Hooks (`apps/tasks/hooks/useTasks.ts`)
+- `useTasks` — all tasks from `/api/all-tasks`
+- `useTask(id)` — single task with subtasks from `/api/task/[id]`
+- `useFilteredTasks({ status, priority, search })` — client-side filtering, supports "active" filter
+- `useCreateTask` / `useBatchCreateTasks` — task creation
+- `useUpdateTask` / `useCompleteTask` — task mutations with optimistic updates
+- `useCreateSubtask` — creates subtask linked to parent
+
+### Notes App Features (Phase 2, 2026-02-26)
+- **Markdown rendering**: `<MarkdownContent>` replaces `<pre>` tag in note detail view
+- **SyntaxHelp**: Toggleable panel in new note + edit mode showing smart linking syntax
+- **Clickable links**: Linked items section links to Tasks/Matters/Notes apps (external URLs)
+- **Smart linking syntax**: `@task`, `@"task name"`, `#PUB-2026-001`, `#"Matter"`, `#keyword`, `&project`, `[[note]]`
+
+### Notes Components (`apps/notes/components/`)
+- `SyntaxHelp.tsx` — Collapsible panel showing smart linking syntax reference
+
 ## Journal App Details
 
 ### Features
 - Entry list with inline search and mood filter chips
 - New entry page with localStorage auto-save (2s debounce, 24h expiry)
-- Entry detail with markdown rendering (headers, bold, lists)
+- Entry detail with full markdown rendering via shared `<MarkdownContent>` (was custom renderContent(), now supports full GFM)
 - AI reflection generation (Claude Sonnet via backend)
 - Companion chat with conversation history
 - Insights dashboard (streak, mood distribution, theme cloud, mood timeline)
@@ -125,12 +162,51 @@ Each app deploys as a separate Vercel project from this monorepo. To deploy:
 - `EntryRow.tsx` — Entry card with mood emoji, energy badge, themes
 - `MoodPicker.tsx` — Mood (5 emojis) + energy (3 chips) selector
 
+## Fitness App Details
+
+### Features
+- **Today's Session**: Smart suggestion (session type + exercises + weights), tap-to-start, per-set logging (weight/reps/RPE), progress bar, overall RPE + notes
+- **History**: Paginated session list with exercise summaries and top set weights
+- **Progress**: Running stats (7d/30d), gym stats (total sessions, avg RPE), per-exercise weight progression charts
+- **Recovery**: 3-tap daily check-in (sleep/energy/soreness) with emoji buttons, duplicate detection, 7-day history
+
+### Architecture
+- Push-first ADHD design: morning APNs push tells you what to do + weights
+- Progressive overload engine: weight suggestions based on RPE trends, running load, kid-week status
+- 3 session templates: A (Strength+Power), B (Upper+Core), C (CrossFit/Metcon)
+- Recovery data feeds into next-session suggestions
+- Backend cron endpoint: `POST /api/cron/gym-suggestion` (CRON_SECRET Bearer auth)
+
+### Fitness Hooks (`apps/fitness/hooks/`)
+- `useFitness.ts` — useSuggestion, useSessions, useSession, useQuickLog, useExercises, useRunningStats
+- `useRecovery.ts` — useRecoveryCheckins, useSubmitRecovery
+
+### Backend Endpoints (14 routes under `/api/gym/`)
+- `GET/POST /api/gym/exercises` — Exercise CRUD (24 seeded)
+- `GET /api/gym/exercises/[id]` — Single exercise + history
+- `GET/POST /api/gym/sessions` — Session CRUD with nested exercises/sets
+- `GET/PATCH/DELETE /api/gym/sessions/[id]` — Session management
+- `POST /api/gym/log` — Quick log (resolves exercise names to IDs server-side)
+- `GET /api/gym/suggest?weekType=kid|non-kid` — Smart session + weight suggestions
+- `GET/POST /api/gym/recovery` — Recovery check-ins (GET list, POST upsert)
+- `GET /api/gym/running/stats` — 7d/30d running aggregates
+- `GET/POST /api/gym/sync/strava` — Webhook handler
+- `POST /api/gym/sync/strava/manual` — 30-day backfill
+- `GET /api/gym/sync/strava/auth` — OAuth redirect
+- `GET /api/gym/sync/strava/callback` — Token exchange
+
+### Known Issues (as of 2026-02-26)
+- **Strava tokens lost** — need re-authorization via `/api/gym/sync/strava/auth`
+- **API returns extra fields** — suggestion endpoint returns `runningContext`, `frequency`, `wod`, `suggestedSets/Reps/confidence` not in TypeScript types (silently dropped)
+- **Cron scheduled** — `POST /api/cron/gym-suggestion` runs via GitHub Actions at 6:30am Sydney daily (`scheduled-notifications.yml`)
+
 ## Commands
 
 ```bash
 # Development
 pnpm dev --filter=@tomos/journal   # Run journal at localhost:3004
 pnpm dev --filter=@tomos/tasks     # Run tasks at localhost:3001
+pnpm dev --filter=@tomos/fitness   # Run fitness at localhost:3005
 
 # Build
 pnpm turbo build --filter=@tomos/journal...  # Build journal + deps
@@ -143,49 +219,3 @@ pnpm turbo build --filter=@tomos/tasks... --filter=@tomos/notes... --filter=@tom
 ## Environment
 
 No `.env.local` needed — all apps call the public backend API at `https://tomos-task-api.vercel.app`. No authentication required (personal tools).
-
-## Keyboard Shortcuts
-
-| App | Shortcut | Action |
-|-----|----------|--------|
-| Tasks | `/` or `Cmd+N` | Focus quick-add input |
-| Notes | `Cmd+N` | New note → `/new` |
-| Matters | `Cmd+N` | New matter → `/new` |
-| Journal | `Cmd+N` | New entry → `/new` |
-| Fitness | `Cmd+N` | New session log → `/log` |
-| Journal chat | `Enter` / `Shift+Enter` | Send / new line |
-
-All implemented via `KeyboardShortcuts.tsx` component in each app's `components/` directory, mounted in `app/layout.tsx`. Pattern: `document.addEventListener("keydown", handler)` — no external library.
-
-## @tomos/api Package Notes
-
-- `packages/api/src/types.ts` exports ALL types — everything in `index.ts` is `export * from "./types"`
-- `packages/api/src/index.ts` exports modules as namespaces: `tasks`, `notes`, `matters`, `fitness`, `calendar`
-- Fitness types use `Fitness*` prefix convention (`FitnessDailyPlan`, `FitnessSession`, etc.)
-- `FitnessWeekType` = alias for `WeekType`; `FitnessQuickLogRequest` = alias for `QuickLogRequest`
-- If adding new API modules, remember to add `export * as <name> from "./<name>"` to `index.ts`
-
-## Deployment
-
-**IMPORTANT: iCloud Drive "Optimize Mac Storage" evicts project files, breaking git and Vercel CLI.**
-
-Workaround — clone to `/tmp` and deploy from there:
-```bash
-# Clone fresh (outside iCloud)
-cd /tmp && git clone git@github.com:braggy9/tomos-web.git tomos-web-fresh
-
-# Make changes, then copy files in and commit from /tmp
-cp ~/Desktop/Projects/tomos-web/<file> /tmp/tomos-web-fresh/<file>
-cd /tmp/tomos-web-fresh && git add . && git commit -m "..." && git push
-
-# Deploy each app by re-linking Vercel project
-vercel link --project tomos-tasks --yes && vercel --prod --yes
-vercel link --project tomos-matters --yes && vercel --prod --yes
-vercel link --project tomos-fitness --yes && vercel --prod --yes
-vercel link --project tomos-journal --yes && vercel --prod --yes
-vercel link --project tomos-notes --yes && vercel --prod --yes
-```
-
-Permanent fix: right-click `~/Desktop/Projects` in Finder → **Keep Downloaded**
-
-*Last updated: 2026-03-02*
