@@ -32,7 +32,7 @@ export function useMatters(params?: {
 export function useFilteredMatters(filters: {
   status?: MatterStatus | "all";
   priority?: MatterPriority | "all";
-  type?: MatterType | "all";
+  category?: string | "all";
   search?: string;
 }) {
   const query = useMatters();
@@ -40,13 +40,15 @@ export function useFilteredMatters(filters: {
   const filtered = query.data?.filter((matter) => {
     if (filters.status && filters.status !== "all" && matter.status !== filters.status) return false;
     if (filters.priority && filters.priority !== "all" && matter.priority !== filters.priority) return false;
-    if (filters.type && filters.type !== "all" && matter.type !== filters.type) return false;
+    if (filters.category && filters.category !== "all" && matter.practiceArea !== filters.category) return false;
     if (filters.search) {
       const q = filters.search.toLowerCase();
       return (
         matter.title.toLowerCase().includes(q) ||
         matter.client.toLowerCase().includes(q) ||
-        matter.matterNumber?.toLowerCase().includes(q) ||
+        matter.practiceArea?.toLowerCase().includes(q) ||
+        matter.counterparty?.toLowerCase().includes(q) ||
+        matter.jurisdiction?.toLowerCase().includes(q) ||
         matter.tags.some((t) => t.toLowerCase().includes(q))
       );
     }

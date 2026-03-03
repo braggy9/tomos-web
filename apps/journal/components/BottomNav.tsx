@@ -134,6 +134,7 @@ export function BottomNav() {
             { name: "Tasks", url: "https://tomos-tasks.vercel.app" },
             { name: "Notes", url: "https://tomos-notes.vercel.app" },
             { name: "Matters", url: "https://tomos-matters.vercel.app" },
+            { name: "Fitness", url: "https://tomos-fitness.vercel.app" },
           ].map((app) => (
             <a
               key={app.name}

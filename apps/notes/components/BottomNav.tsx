@@ -87,6 +87,17 @@ export function BottomNav() {
             );
           })}
         </nav>
+        {/* Smart linking syntax */}
+        <div className="p-3 border-t border-gray-100">
+          <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider px-3 mb-2">Smart Links</p>
+          <div className="px-3 space-y-1">
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">⌘N</span> — new note</p>
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">@task</span> — link a task</p>
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">#matter</span> — link a matter</p>
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">&amp;project</span> — link a project</p>
+            <p className="text-[10px] text-gray-400"><span className="font-mono text-gray-500">[[note]]</span> — link a note</p>
+          </div>
+        </div>
         {/* Cross-app links */}
         <div className="p-3 border-t border-gray-100">
           <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider px-3 mb-2">TomOS Apps</p>
@@ -94,6 +105,7 @@ export function BottomNav() {
             { name: "Tasks", url: "https://tomos-tasks.vercel.app" },
             { name: "Matters", url: "https://tomos-matters.vercel.app" },
             { name: "Journal", url: "https://tomos-journal.vercel.app" },
+            { name: "Fitness", url: "https://tomos-fitness.vercel.app" },
           ].map((app) => (
             <a key={app.name} href={app.url} className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors">
               <span className="w-1 h-1 rounded-full bg-gray-300" />
