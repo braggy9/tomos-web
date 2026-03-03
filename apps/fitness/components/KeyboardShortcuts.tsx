@@ -12,6 +12,10 @@ export function KeyboardShortcuts() {
         e.preventDefault();
         router.push("/log");
       }
+      if (e.metaKey && e.altKey && e.key === "e") {
+        e.preventDefault();
+        window.location.href = "mailto:tasks@tomos.run";
+      }
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);

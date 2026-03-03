@@ -8,9 +8,14 @@ export function KeyboardShortcuts() {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.metaKey && e.key === "n" && !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) {
+      const notEditing = !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName);
+      if (e.metaKey && e.key === "n" && notEditing) {
         e.preventDefault();
         router.push("/new");
+      }
+      if (e.metaKey && e.altKey && e.key === "e") {
+        e.preventDefault();
+        window.location.href = "mailto:tasks@tomos.run";
       }
     }
     document.addEventListener("keydown", handleKeyDown);

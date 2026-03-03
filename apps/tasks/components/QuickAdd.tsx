@@ -18,6 +18,10 @@ export function QuickAdd() {
         e.preventDefault();
         inputRef.current?.focus();
       }
+      if (e.metaKey && e.altKey && e.key === "e") {
+        e.preventDefault();
+        window.location.href = "mailto:tasks@tomos.run";
+      }
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
