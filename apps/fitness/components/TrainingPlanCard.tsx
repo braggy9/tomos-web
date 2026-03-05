@@ -45,8 +45,21 @@ export function TrainingPlanCard() {
   }
 
   const prescription = coachToday?.prescription;
-  const plannedSession = coachToday?.plannedSession || plan?.todaysSessions?.[0];
   const hasPlan = plan?.hasActivePlan;
+
+  // Normalize planned session from either source into a common shape
+  const rawPlanned = coachToday?.plannedSession || plan?.todaysSessions?.[0];
+  const plannedSession = rawPlanned
+    ? {
+        sessionType: rawPlanned.sessionType,
+        sessionName: ("sessionName" in rawPlanned ? rawPlanned.sessionName : null) as string | null,
+        targetDistanceKm: rawPlanned.targetDistanceKm,
+        targetPaceZone: ("targetPaceZone" in rawPlanned ? rawPlanned.targetPaceZone : null) as string | null,
+        notes: rawPlanned.notes,
+        isOptional: ("isOptional" in rawPlanned ? rawPlanned.isOptional : false) as boolean,
+        status: ("status" in rawPlanned ? rawPlanned.status : "planned") as string,
+      }
+    : null;
 
   // Nothing to show
   if (!prescription && !hasPlan) return null;
@@ -155,9 +168,7 @@ export function TrainingPlanCard() {
                 <p className="text-xs text-gray-400">
                   Plan:{" "}
                   {SESSION_TYPE_EMOJI[plannedSession.sessionType] || "📋"}{" "}
-                  {"sessionName" in plannedSession
-                    ? plannedSession.sessionName || plannedSession.sessionType
-                    : plannedSession.sessionType}
+                  {plannedSession.sessionName || plannedSession.sessionType}
                   {plannedSession.targetDistanceKm &&
                     ` (${plannedSession.targetDistanceKm}km)`}
                 </p>
@@ -172,10 +183,8 @@ export function TrainingPlanCard() {
             </span>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm text-gray-900">
-                {"sessionName" in plannedSession
-                  ? plannedSession.sessionName || plannedSession.sessionType
-                  : plannedSession.sessionType}
-                {"isOptional" in plannedSession && plannedSession.isOptional && (
+                {plannedSession.sessionName || plannedSession.sessionType}
+                {plannedSession.isOptional && (
                   <span className="text-xs text-gray-400 ml-1">(optional)</span>
                 )}
               </p>
@@ -185,12 +194,11 @@ export function TrainingPlanCard() {
                     {plannedSession.targetDistanceKm}km
                   </span>
                 )}
-                {"targetPaceZone" in plannedSession &&
-                  plannedSession.targetPaceZone && (
-                    <span className="text-xs text-gray-400">
-                      @ {plannedSession.targetPaceZone}
-                    </span>
-                  )}
+                {plannedSession.targetPaceZone && (
+                  <span className="text-xs text-gray-400">
+                    @ {plannedSession.targetPaceZone}
+                  </span>
+                )}
               </div>
               {plannedSession.notes && (
                 <p className="text-xs text-gray-400 mt-1 line-clamp-1">

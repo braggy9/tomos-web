@@ -2,57 +2,86 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fitness } from "@tomos/api";
-import type { FitnessQuickLogRequest, FitnessWeekType } from "@tomos/api";
+import type {
+  WeekType,
+  QuickLogRequest,
+  SessionSuggestion,
+  GymSession,
+  RunningStats,
+  Exercise,
+  Pagination,
+} from "@tomos/api";
 
-export function useDailyPlan(weekType?: FitnessWeekType) {
-  return useQuery({
-    queryKey: ["daily-plan", weekType],
-    queryFn: () => fitness.getDailyPlan(weekType),
-    select: (res) => res.data,
-  });
-}
+// ─── Suggestion ─────────────────────────────────
 
-export function useSuggestion(weekType?: FitnessWeekType) {
+export function useSuggestion(weekType?: WeekType) {
   return useQuery({
-    queryKey: ["suggestion", weekType],
+    queryKey: ["fitness", "suggestion", weekType],
     queryFn: () => fitness.getSuggestion(weekType),
     select: (res) => res.data,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
-export function useSessions(limit?: number) {
+// ─── Sessions ───────────────────────────────────
+
+export function useSessions(params?: {
+  type?: string;
+  limit?: number;
+  offset?: number;
+}) {
   return useQuery({
-    queryKey: ["sessions", limit],
-    queryFn: () => fitness.getSessions(limit),
-    select: (res) => res.data,
+    queryKey: ["fitness", "sessions", params],
+    queryFn: () => fitness.getSessions(params),
+    select: (res) => ({
+      sessions: res.data,
+      pagination: res.pagination,
+    }),
   });
 }
 
 export function useSession(id: string) {
   return useQuery({
-    queryKey: ["session", id],
+    queryKey: ["fitness", "session", id],
     queryFn: () => fitness.getSession(id),
     select: (res) => res.data,
     enabled: !!id,
   });
 }
 
-export function useExercises() {
-  return useQuery({
-    queryKey: ["exercises"],
-    queryFn: () => fitness.getExercises(),
-    select: (res) => res.data,
-  });
-}
+// ─── Quick Log ──────────────────────────────────
 
 export function useQuickLog() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: FitnessQuickLogRequest) => fitness.quickLog(data),
+    mutationFn: (data: QuickLogRequest) => fitness.quickLog(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sessions"] });
-      queryClient.invalidateQueries({ queryKey: ["daily-plan"] });
-      queryClient.invalidateQueries({ queryKey: ["progress-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["fitness", "sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["fitness", "suggestion"] });
     },
+  });
+}
+
+// ─── Exercises ──────────────────────────────────
+
+export function useExercises(params?: {
+  category?: string;
+  search?: string;
+}) {
+  return useQuery({
+    queryKey: ["fitness", "exercises", params],
+    queryFn: () => fitness.getExercises(params),
+    select: (res) => res.data,
+  });
+}
+
+// ─── Running Stats ──────────────────────────────
+
+export function useRunningStats() {
+  return useQuery({
+    queryKey: ["fitness", "running-stats"],
+    queryFn: () => fitness.getRunningStats(),
+    select: (res) => res.data,
+    staleTime: 5 * 60 * 1000,
   });
 }
