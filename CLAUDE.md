@@ -164,41 +164,71 @@ Each app deploys as a separate Vercel project from this monorepo. To deploy:
 
 ## Fitness App Details
 
-### Features
-- **Today's Session**: Smart suggestion (session type + exercises + weights), tap-to-start, per-set logging (weight/reps/RPE), progress bar, overall RPE + notes
-- **History**: Paginated session list with exercise summaries and top set weights
-- **Progress**: Running stats (7d/30d), gym stats (total sessions, avg RPE), per-exercise weight progression charts
-- **Recovery**: 3-tap daily check-in (sleep/energy/soreness) with emoji buttons, duplicate detection, 7-day history
+### Features (Enhanced 2026-03-05)
+- **Smart Home Screen**: Auto-selects Run tab when Strava activity exists today, Gym tab otherwise. Run | Gym tab pills.
+- **Run Logging (RunLogPanel)**: Auto-populated from Strava (distance, duration, pace, HR, elevation, splits), HR zone distribution bar. Subjective logging: RPE 1-10 pills, session type override, mood post 1-5 emojis, notes.
+- **Gym Logging (GymLogPanel)**: Extracted from original page. Smart suggestion + per-set logging + mood post emojis.
+- **Weekly Dashboard**: Running card (totalKm, sessions, avgPace, longest), gym card (sessions, avgRPE, totalSets), ACWR training load bar chart, recovery trend, plan compliance progress bar.
+- **History**: Gym/Running/All filter toggle. Running rows link to `/history/run/[id]` detail pages.
+- **Activity Detail**: Stats grid, per-km splits table, HR zone distribution, on-demand Strava streams loading.
+- **Settings**: Max/resting HR inputs, auto-calculated HR zones (Z1-Z5), default week type, Strava re-auth, Garmin "coming soon".
+- **Recovery**: 3-tap daily check-in (sleep/energy/soreness), auto-attached to sessions.
 
 ### Architecture
+- Running-first with gym support. Smart tab switching based on daily Strava activity.
 - Push-first ADHD design: morning APNs push tells you what to do + weights
 - Progressive overload engine: weight suggestions based on RPE trends, running load, kid-week status
 - 3 session templates: A (Strength+Power), B (Upper+Core), C (CrossFit/Metcon)
-- Recovery data feeds into next-session suggestions
+- HR zone calculation: `lib/fitness/hr-zones.ts` — 5 zones based on maxHR percentage
+- Strava streams: on-demand fetch with 24h cache in `streamsCache` JSONB field
+- RunSession auto-attaches today's RecoveryCheckIn via `recoveryId`
 - Backend cron endpoint: `POST /api/cron/gym-suggestion` (CRON_SECRET Bearer auth)
 
 ### Fitness Hooks (`apps/fitness/hooks/`)
 - `useFitness.ts` — useSuggestion, useSessions, useSession, useQuickLog, useExercises, useRunningStats
 - `useRecovery.ts` — useRecoveryCheckins, useSubmitRecovery
+- `useRunning.ts` — useTodayRun, useRunningActivities, useRunningActivity, useActivityStreams, useCreateRunSession, useHRZones, useManualSync
+- `useSettings.ts` — useSettings, useUpdateSettings
+- `useDashboard.ts` — useWeeklyDashboard
 
-### Backend Endpoints (14 routes under `/api/gym/`)
+### Fitness Components (`apps/fitness/components/`)
+- `RunLogPanel.tsx` — Auto-populated run data + subjective logging form. Exports `NoRunPanel` for no-run state.
+- `GymLogPanel.tsx` — Extracted gym logger with mood post addition.
+- `BottomNav.tsx` — 5 tabs: Today, Plan, History, Dashboard, Recovery. Desktop sidebar with Settings + cross-app links.
+
+### Backend Endpoints (26 routes under `/api/gym/`)
+**Original:**
 - `GET/POST /api/gym/exercises` — Exercise CRUD (24 seeded)
 - `GET /api/gym/exercises/[id]` — Single exercise + history
 - `GET/POST /api/gym/sessions` — Session CRUD with nested exercises/sets
 - `GET/PATCH/DELETE /api/gym/sessions/[id]` — Session management
-- `POST /api/gym/log` — Quick log (resolves exercise names to IDs server-side)
+- `POST /api/gym/log` — Quick log (resolves exercise names, now includes moodPost + auto-recoveryId)
 - `GET /api/gym/suggest?weekType=kid|non-kid` — Smart session + weight suggestions
-- `GET/POST /api/gym/recovery` — Recovery check-ins (GET list, POST upsert)
+- `GET/POST /api/gym/recovery` — Recovery check-ins
 - `GET /api/gym/running/stats` — 7d/30d running aggregates
-- `GET/POST /api/gym/sync/strava` — Webhook handler
-- `POST /api/gym/sync/strava/manual` — 30-day backfill
+- `GET/POST /api/gym/sync/strava` — Webhook (enriched: splits, maxHR, cadence, calories, description)
+- `POST /api/gym/sync/strava/manual` — 30-day backfill (now fetches individual activity details)
 - `GET /api/gym/sync/strava/auth` — OAuth redirect
 - `GET /api/gym/sync/strava/callback` — Token exchange
 
-### Known Issues (as of 2026-02-26)
-- **Strava tokens lost** — need re-authorization via `/api/gym/sync/strava/auth`
-- **API returns extra fields** — suggestion endpoint returns `runningContext`, `frequency`, `wod`, `suggestedSets/Reps/confidence` not in TypeScript types (silently dropped)
-- **Cron scheduled** — `POST /api/cron/gym-suggestion` runs via GitHub Actions at 6:30am Sydney daily (`scheduled-notifications.yml`)
+**Added 2026-03-05:**
+- `GET/PATCH /api/gym/settings` — UserSettings singleton (maxHR, restingHR, weekType)
+- `GET /api/gym/running/activities` — List with RunSession, pagination, `?days=` filter
+- `GET /api/gym/running/activities/[id]` — Detail + splits + HR zones
+- `GET /api/gym/running/activities/[id]/streams` — On-demand Strava streams (24h cache)
+- `POST /api/gym/running/sessions` — Create/update RunSession (auto-attaches RecoveryCheckIn)
+- `GET /api/gym/running/today` — Check for Strava run today (Sydney TZ)
+- `GET /api/gym/running/zones` — HR zones from settings, optional `?activityId=` for zone time
+- `GET /api/gym/dashboard/weekly` — Weekly aggregates (running, gym, ACWR, recovery, compliance)
+- `GET /api/gym/sync/garmin/auth` — Stub (501)
+- `GET /api/gym/sync/garmin/callback` — Stub (501)
+- `POST /api/gym/sync/garmin` — Webhook stub (501)
+- `GET /api/gym/sync/garmin/workouts` — Stub (empty array)
+
+### Known Issues (as of 2026-03-05)
+- **Strava tokens need re-auth** — visit `/api/gym/sync/strava/auth`
+- **Garmin is stubs-only** — all endpoints return 501 "Garmin Connect not configured yet"
+- **Cron scheduled** — `POST /api/cron/gym-suggestion` runs via GitHub Actions at 6:30am Sydney daily
 
 ## Commands
 

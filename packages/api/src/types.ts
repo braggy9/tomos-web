@@ -569,6 +569,7 @@ export interface QuickLogRequest {
   weekType?: WeekType;
   notes?: string;
   overallRPE?: number;
+  moodPost?: number;
   exercises: QuickLogExercise[];
 }
 
@@ -579,6 +580,136 @@ export interface CreateRecoveryRequest {
   notes?: string;
 }
 
+// ─── Running Activity Types ─────────────────────
+
+export interface UserSettings {
+  id: string;
+  maxHeartRate: number;
+  restingHR: number | null;
+  defaultWeekType: string;
+}
+
+export interface HRZone {
+  zone: number;
+  min: number;
+  max: number;
+  name: string;
+}
+
+export interface ZoneTime {
+  zone: number;
+  name: string;
+  minutes: number;
+  percentage: number;
+}
+
+export interface RunSplit {
+  km: number;
+  timeSec: number;
+  avgHR: number | null;
+  avgPace: number | null;
+  elevation: number;
+}
+
+export interface RunSession {
+  id: string;
+  runningSyncId: string;
+  rpe: number | null;
+  moodPost: number | null;
+  sessionTypeOverride: string | null;
+  notes: string | null;
+  recoveryId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RunningActivity {
+  id: string;
+  externalId: string;
+  source: string;
+  date: string;
+  type: string;
+  distance: number;
+  duration: number;
+  avgPace: number | null;
+  avgHeartRate: number | null;
+  elevationGain: number | null;
+  trainingLoad: number | null;
+  maxHeartRate: number | null;
+  avgCadence: number | null;
+  calories: number | null;
+  activityName: string | null;
+  description: string | null;
+  splits: RunSplit[] | null;
+  sufferScore: number | null;
+  runSession: RunSession | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RunningActivityDetail extends RunningActivity {
+  hrZones: HRZone[] | null;
+  zoneTime: ZoneTime[] | null;
+}
+
+export interface ActivityStreams {
+  heartrate: number[] | null;
+  distance: number[] | null;
+  altitude: number[] | null;
+  latlng: [number, number][] | null;
+  time: number[] | null;
+  velocity_smooth: number[] | null;
+  cadence: number[] | null;
+}
+
+export interface CreateRunSessionRequest {
+  runningSyncId: string;
+  rpe?: number;
+  moodPost?: number;
+  sessionTypeOverride?: string;
+  notes?: string;
+}
+
+export interface TodayRunStatus {
+  hasRun: boolean;
+  run: RunningActivity | null;
+}
+
+export interface WeeklyDashboard {
+  period: { start: string; end: string };
+  running: {
+    totalKm: number;
+    sessions: number;
+    avgPace: number;
+    longestRun: number;
+    totalDuration: number;
+  };
+  gym: {
+    sessions: number;
+    avgRPE: number | null;
+    totalSets: number;
+  };
+  trainingLoad: {
+    acwr: number;
+    acwrStatus: "green" | "amber" | "red";
+    dailyLoads: Array<{
+      day: string;
+      date: string;
+      runningLoad: number;
+      gymSessions: number;
+      hasActivity: boolean;
+    }>;
+  };
+  recovery: {
+    avgReadiness: number | null;
+    checkins: number;
+  };
+  planCompliance: {
+    planned: number;
+    completed: number;
+    percentage: number;
+  } | null;
+}
 
 // ─── Fitness Types (Fitness* prefix for clarity) ──────────────────────────────
 
@@ -749,6 +880,139 @@ export interface FitnessDailyPlan {
 
 // Alias for backwards compatibility
 export type FitnessQuickLogRequest = QuickLogRequest;
+
+// ─── Training Plan Types ───────────────────────────
+
+export interface TrainingBlock {
+  id: string;
+  name: string;
+  phase: string;
+  startDate: string;
+  endDate: string;
+  targetWeeklyKm: number | null;
+  notes: string | null;
+  status: string;
+  weeks?: TrainingWeekSummary[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TrainingWeekSummary {
+  id: string;
+  weekNumber: number;
+  startDate: string;
+  targetKm: number | null;
+  actualKm: number | null;
+  status: string;
+  weekType: string | null;
+}
+
+export interface PlannedSession {
+  id: string;
+  weekId: string;
+  dayOfWeek: number;
+  sessionType: string;
+  targetDistanceKm: number | null;
+  targetPaceZone: string | null;
+  sessionName: string | null;
+  notes: string | null;
+  isOptional: boolean;
+  isKidWeekOnly: boolean;
+  isNonKidOnly: boolean;
+  linkedRunId: string | null;
+  linkedGymSessionId: string | null;
+  status: string;
+  linkedRun?: { id: string; date: string; distance: number; type: string; duration?: number } | null;
+  linkedGymSession?: { id: string; date: string; sessionType: string; duration?: number } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TrainingWeek extends TrainingWeekSummary {
+  blockId: string;
+  keyFocus: string | null;
+  notes: string | null;
+  block?: { name: string; phase: string };
+  sessions?: PlannedSession[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TrainingWeekWithProgress extends TrainingWeek {
+  weekProgress: {
+    planned: number;
+    completed: number;
+    skipped?: number;
+    targetKm: number | null;
+    actualKm: number | null;
+  };
+}
+
+export interface TodayTrainingPlan {
+  hasActivePlan: boolean;
+  message?: string;
+  block?: { name: string; phase: string };
+  week?: {
+    id: string;
+    weekNumber: number;
+    weekType: string | null;
+    keyFocus: string | null;
+    targetKm: number | null;
+    actualKm: number | null;
+  };
+  todaysSessions?: {
+    id: string;
+    sessionType: string;
+    sessionName: string | null;
+    targetDistanceKm: number | null;
+    targetPaceZone: string | null;
+    notes: string | null;
+    isOptional: boolean;
+    status: string;
+  }[];
+  weekProgress?: {
+    planned: number;
+    completed: number;
+    targetKm: number | null;
+    actualKm: number | null;
+  };
+}
+
+// ─── Coach Types ─────────────────────────────────
+
+export interface CoachPrescription {
+  sessionType: string;
+  targetDistanceKm: number | null;
+  targetHRZone: string | null;
+  targetPace: string | null;
+  warmup: string | null;
+  mainSet: string | null;
+  cooldown: string | null;
+  notes: string | null;
+}
+
+export interface CoachTodaySnapshot {
+  date: string;
+  hasRun: boolean;
+  run: RunningActivity | null;
+  recovery: {
+    sleepQuality: number;
+    energy: number;
+    soreness: number;
+    motivation: number;
+    readinessScore: number | null;
+    notes: string | null;
+  } | null;
+  prescription: CoachPrescription | null;
+  plannedSession: {
+    sessionType: string;
+    targetDistanceKm: number | null;
+    sessionName: string | null;
+    targetPaceZone: string | null;
+    notes: string | null;
+    status: string;
+  } | null;
+}
 
 // ─── Generic API Response ─────────────────────────
 
