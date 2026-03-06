@@ -1004,14 +1004,6 @@ export interface CoachTodaySnapshot {
     notes: string | null;
   } | null;
   prescription: CoachPrescription | null;
-  plannedSession: {
-    sessionType: string;
-    targetDistanceKm: number | null;
-    sessionName: string | null;
-    targetPaceZone: string | null;
-    notes: string | null;
-    status: string;
-  } | null;
 }
 
 export interface CoachWeekDay {
