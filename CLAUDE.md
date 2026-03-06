@@ -230,6 +230,30 @@ Each app deploys as a separate Vercel project from this monorepo. To deploy:
 - **Garmin is stubs-only** — all endpoints return 501 "Garmin Connect not configured yet"
 - **Cron scheduled** — `POST /api/cron/gym-suggestion` runs via GitHub Actions at 6:30am Sydney daily
 
+## Keyboard Shortcuts
+
+All apps implement `KeyboardShortcuts.tsx` mounted in `app/layout.tsx`.
+
+| App | Shortcut | Action |
+|-----|----------|--------|
+| Tasks | `/` or `Cmd+N` | Focus quick-add |
+| Notes | `Cmd+N` | New note |
+| Matters | `Cmd+N` | New matter |
+| Journal | `Cmd+N` | New entry |
+| Fitness | `Cmd+N` | New session log |
+| All apps | `Cmd+Option+E` | Open `mailto:tasks@tomos.run` in default email client |
+
+**Cmd+Option+E pattern** (in KeyboardShortcuts.tsx):
+```typescript
+if (e.metaKey && e.altKey && e.key === "e") {
+  e.preventDefault();
+  window.location.href = "mailto:tasks@tomos.run";
+}
+```
+
+Tasks app: shortcut is in `QuickAdd.tsx` (handles `/`, `Cmd+N`, and `Cmd+Option+E`).
+Other apps: shortcut is in `components/KeyboardShortcuts.tsx`.
+
 ## Commands
 
 ```bash
