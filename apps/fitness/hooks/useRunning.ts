@@ -72,6 +72,15 @@ export function useHRZones(activityId?: string) {
   });
 }
 
+export function useCoachWeek(weekOffset = 0) {
+  return useQuery({
+    queryKey: ["fitness", "coach", "week", weekOffset],
+    queryFn: () => fitness.getCoachWeek(weekOffset),
+    select: (res) => res.data,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useCoachToday() {
   return useQuery({
     queryKey: ["fitness", "coach", "today"],

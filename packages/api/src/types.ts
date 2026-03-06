@@ -1082,6 +1082,13 @@ export interface CoachWeekDay {
   }>;
 }
 
+export interface CoachWeekResponse {
+  weekOffset: number;
+  monday: string;
+  sunday: string;
+  days: CoachWeekDay[];
+}
+
 // ─── Generic API Response ─────────────────────────
 
 export interface ApiResponse<T> {

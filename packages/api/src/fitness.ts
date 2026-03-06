@@ -20,6 +20,7 @@ import type {
   HRZone,
   ZoneTime,
   CoachTodaySnapshot,
+  CoachWeekResponse,
   Activity,
   CreateActivityRequest,
 } from "./types";
@@ -155,6 +156,13 @@ export async function getCoachToday(): Promise<{
   data: CoachTodaySnapshot;
 }> {
   return get("/api/gym/coach/today");
+}
+
+export async function getCoachWeek(weekOffset?: number): Promise<{
+  success: boolean;
+  data: CoachWeekResponse;
+}> {
+  return get("/api/gym/coach/week", weekOffset != null ? { weekOffset } : undefined);
 }
 
 // ─── Activities (non-run) ───────────────────────

@@ -144,7 +144,7 @@ function PhaseHeader({ monday }: { monday: string }) {
 function DayCard({ day, isToday }: { day: CoachWeekDay; isToday: boolean }) {
   const race = getRaceForDate(day.date);
   const socialRuns = getSocialRunsForDay(day.dayOfWeek);
-  const hasContent = day.prescription || day.completedRuns.length > 0 || day.completedGym.length > 0 || race;
+  const hasContent = day.prescription || day.completedRuns.length > 0 || day.completedGym.length > 0 || (day.completedActivities?.length ?? 0) > 0 || race;
 
   return (
     <div
@@ -210,9 +210,11 @@ function DayCard({ day, isToday }: { day: CoachWeekDay; isToday: boolean }) {
           <span className="text-green-600 text-xs font-bold">
             {Math.round(run.distance * 10) / 10}km
           </span>
-          <span className="text-[10px] text-green-500">
-            {run.avgPace.toFixed(1)}/km
-          </span>
+          {run.avgPace && (
+            <span className="text-[10px] text-green-500">
+              {run.avgPace.toFixed(1)}/km
+            </span>
+          )}
           {run.avgHeartRate && (
             <span className="text-[10px] text-green-500">
               {run.avgHeartRate}bpm
@@ -237,6 +239,32 @@ function DayCard({ day, isToday }: { day: CoachWeekDay; isToday: boolean }) {
           )}
         </div>
       ))}
+
+      {/* Completed activities overlay */}
+      {day.completedActivities?.map((act) => {
+        const actColors: Record<string, string> = {
+          swim: "bg-cyan-50 text-cyan-600",
+          mobility: "bg-green-50 text-green-600",
+          yoga: "bg-purple-50 text-purple-600",
+          "cross-train": "bg-orange-50 text-orange-600",
+          walk: "bg-amber-50 text-amber-600",
+          workout: "bg-pink-50 text-pink-600",
+        };
+        return (
+          <div
+            key={act.id}
+            className={`flex items-center gap-2 rounded-lg px-2 py-1.5 ${actColors[act.activityType] || "bg-gray-50 text-gray-600"}`}
+          >
+            <span className="text-xs font-bold capitalize">
+              {act.activityType}
+            </span>
+            <span className="text-[10px]">{act.duration}m</span>
+            {act.distance && (
+              <span className="text-[10px]">{act.distance.toFixed(1)}km</span>
+            )}
+          </div>
+        );
+      })}
 
       {/* Social runs (faded) */}
       {socialRuns.length > 0 && !race && (
