@@ -1,8 +1,9 @@
 "use client";
 
 import { useCurrentWeek, useUpdateWeek, useUpdatePlannedSession } from "../hooks/useTraining";
+import { useActivities } from "../hooks/useRunning";
 import { useToast } from "@tomos/ui";
-import type { PlannedSession, WeekType } from "@tomos/api";
+import type { PlannedSession, WeekType, Activity } from "@tomos/api";
 
 const DAY_NAMES = ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -12,6 +13,15 @@ const STATUS_STYLES: Record<string, { bg: string; icon: string }> = {
   minimum_dose: { bg: "bg-green-50 border-green-200", icon: "✓" },
   skipped: { bg: "bg-gray-50 border-gray-100 opacity-60", icon: "—" },
   modified: { bg: "bg-amber-50 border-amber-200", icon: "~" },
+};
+
+const ACTIVITY_TYPE_BADGE: Record<string, { bg: string; label: string }> = {
+  swim: { bg: "bg-cyan-100 text-cyan-700", label: "Swim" },
+  mobility: { bg: "bg-green-100 text-green-700", label: "Mobility" },
+  yoga: { bg: "bg-purple-100 text-purple-700", label: "Yoga" },
+  "cross-train": { bg: "bg-orange-100 text-orange-700", label: "X-train" },
+  walk: { bg: "bg-amber-100 text-amber-700", label: "Walk" },
+  workout: { bg: "bg-pink-100 text-pink-700", label: "Workout" },
 };
 
 const SESSION_TYPE_COLOR: Record<string, string> = {
@@ -109,6 +119,7 @@ function SessionRow({
 export function WeekView() {
   const toast = useToast().toast;
   const { data: week, isLoading } = useCurrentWeek();
+  const { data: activityData } = useActivities({ days: 7 });
   const updateWeek = useUpdateWeek();
   const updateSession = useUpdatePlannedSession();
 
@@ -135,6 +146,15 @@ export function WeekView() {
 
   const today = new Date();
   const todayDayOfWeek = today.getDay() === 0 ? 7 : today.getDay();
+
+  // Group activities by day of week
+  const activitiesByDay: Record<number, Activity[]> = {};
+  for (const a of activityData?.activities || []) {
+    const d = new Date(a.date);
+    const dow = d.getDay() === 0 ? 7 : d.getDay();
+    if (!activitiesByDay[dow]) activitiesByDay[dow] = [];
+    activitiesByDay[dow].push(a);
+  }
 
   // Filter sessions based on week type
   const filteredSessions = (week.sessions || []).filter((s) => {
@@ -226,12 +246,37 @@ export function WeekView() {
       {/* Session rows */}
       <div className="space-y-2">
         {filteredSessions.map((session) => (
-          <SessionRow
-            key={session.id}
-            session={session}
-            isToday={session.dayOfWeek === todayDayOfWeek}
-            onStatusChange={handleStatusChange}
-          />
+          <div key={session.id}>
+            <SessionRow
+              session={session}
+              isToday={session.dayOfWeek === todayDayOfWeek}
+              onStatusChange={handleStatusChange}
+            />
+            {/* Activities for this day */}
+            {activitiesByDay[session.dayOfWeek]?.map((a) => {
+              const badge = ACTIVITY_TYPE_BADGE[a.activityType] || {
+                bg: "bg-gray-100 text-gray-700",
+                label: a.activityType,
+              };
+              return (
+                <div
+                  key={a.id}
+                  className="ml-[4.75rem] mt-1 flex items-center gap-2 text-xs text-gray-500"
+                >
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${badge.bg}`}>
+                    {badge.label}
+                  </span>
+                  <span>{a.duration}m</span>
+                  {a.distance && <span>{a.distance.toFixed(1)}km</span>}
+                  {a.activityName && (
+                    <span className="truncate text-gray-400">
+                      {a.activityName}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         ))}
       </div>
     </div>

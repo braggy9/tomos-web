@@ -1,24 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTodayRun, useHRZones } from "../hooks/useRunning";
 import { Spinner } from "@tomos/ui";
 import type { WeekType } from "@tomos/api";
 import { TrainingPlanCard } from "../components/TrainingPlanCard";
 import { RunLogPanel, NoRunPanel } from "../components/RunLogPanel";
 import { GymLogPanel } from "../components/GymLogPanel";
+import { ActivityLogPanel } from "../components/ActivityLogPanel";
 
-type Tab = "run" | "gym";
+type Tab = "run" | "gym" | "log";
 
 export default function TodayPage() {
   const [weekType, setWeekType] = useState<WeekType>("non-kid");
-  const [activeTab, setActiveTab] = useState<Tab>("run");
+  const [activeTab, setActiveTab] = useState<Tab>("gym");
   const { data: todayRun, isLoading: runLoading } = useTodayRun();
   const { data: zonesData } = useHRZones(
     todayRun?.hasRun ? todayRun.run?.id : undefined
   );
 
-  // Run tab is always default — no auto-switch needed
+  // Auto-select Run tab when Strava run exists today
+  useEffect(() => {
+    if (todayRun?.hasRun) {
+      setActiveTab("run");
+    }
+  }, [todayRun?.hasRun]);
 
   if (runLoading) {
     return (
@@ -54,31 +60,24 @@ export default function TodayPage() {
       {/* Training plan card */}
       <TrainingPlanCard />
 
-      {/* Run | Gym tab pills */}
+      {/* Run | Gym | Log tab pills */}
       <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-        <button
-          onClick={() => setActiveTab("run")}
-          className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-            activeTab === "run"
-              ? "bg-white text-brand-700 shadow-sm"
-              : "text-gray-500"
-          }`}
-        >
-          Run
-          {todayRun?.hasRun && (
-            <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-500" />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab("gym")}
-          className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-            activeTab === "gym"
-              ? "bg-white text-brand-700 shadow-sm"
-              : "text-gray-500"
-          }`}
-        >
-          Gym
-        </button>
+        {(["run", "gym", "log"] as Tab[]).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
+              activeTab === tab
+                ? "bg-white text-brand-700 shadow-sm"
+                : "text-gray-500"
+            }`}
+          >
+            {tab === "run" ? "Run" : tab === "gym" ? "Gym" : "Log"}
+            {tab === "run" && todayRun?.hasRun && (
+              <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-500" />
+            )}
+          </button>
+        ))}
       </div>
 
       {/* Tab content */}
@@ -91,11 +90,13 @@ export default function TodayPage() {
         ) : (
           <NoRunPanel />
         )
-      ) : (
+      ) : activeTab === "gym" ? (
         <GymLogPanel
           weekType={weekType}
           onWeekTypeChange={setWeekType}
         />
+      ) : (
+        <ActivityLogPanel />
       )}
     </div>
   );

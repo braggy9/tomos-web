@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSessions } from "../../hooks/useFitness";
-import { useRunningActivities } from "../../hooks/useRunning";
+import { useRunningActivities, useActivities } from "../../hooks/useRunning";
 import { Spinner } from "@tomos/ui";
 
 const SESSION_NAMES: Record<string, string> = {
@@ -12,7 +12,16 @@ const SESSION_NAMES: Record<string, string> = {
   C: "CrossFit Fun",
 };
 
-type HistoryFilter = "all" | "gym" | "running";
+type HistoryFilter = "all" | "gym" | "running" | "activities";
+
+const TYPE_BADGE_COLORS: Record<string, string> = {
+  swim: "bg-cyan-50 text-cyan-700 border-cyan-200",
+  mobility: "bg-green-50 text-green-700 border-green-200",
+  yoga: "bg-purple-50 text-purple-700 border-purple-200",
+  "cross-train": "bg-orange-50 text-orange-700 border-orange-200",
+  walk: "bg-amber-50 text-amber-700 border-amber-200",
+  workout: "bg-pink-50 text-pink-700 border-pink-200",
+};
 
 function formatPace(minPerKm: number | null): string {
   if (!minPerKm || minPerKm <= 0) return "—";
@@ -36,14 +45,17 @@ export default function HistoryPage() {
     limit,
     offset: runOffset,
   });
+  const { data: activityData, isLoading: activityLoading } = useActivities({ days: 90 });
 
   const isLoading =
     (filter === "gym" && gymLoading) ||
     (filter === "running" && runLoading) ||
-    (filter === "all" && (gymLoading || runLoading));
+    (filter === "activities" && activityLoading) ||
+    (filter === "all" && (gymLoading || runLoading || activityLoading));
 
   const sessions = gymData?.sessions || [];
   const activities = runData?.activities || [];
+  const otherActivities = activityData?.activities || [];
 
   return (
     <div className="space-y-4">
@@ -51,7 +63,7 @@ export default function HistoryPage() {
 
       {/* Filter toggle */}
       <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-        {(["all", "gym", "running"] as HistoryFilter[]).map((f) => (
+        {(["all", "gym", "running", "activities"] as HistoryFilter[]).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -242,13 +254,83 @@ export default function HistoryPage() {
         </div>
       )}
 
+      {/* Other activities (swim, mobility, yoga, etc.) */}
+      {(filter === "all" || filter === "activities") && !activityLoading && (
+        <div className="space-y-3">
+          {filter === "all" && otherActivities.length > 0 && (
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+              Activities
+            </h2>
+          )}
+          {otherActivities.map((act) => {
+            const date = new Date(act.date);
+            const dayName = date.toLocaleDateString("en-AU", {
+              weekday: "short",
+              timeZone: "Australia/Sydney",
+            });
+            const dateStr = date.toLocaleDateString("en-AU", {
+              day: "numeric",
+              month: "short",
+              timeZone: "Australia/Sydney",
+            });
+            const badgeStyle =
+              TYPE_BADGE_COLORS[act.activityType] ||
+              "bg-gray-50 text-gray-700 border-gray-200";
+
+            return (
+              <div
+                key={act.id}
+                className="bg-white rounded-xl border border-gray-200 p-4"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm">
+                      {act.activityName || act.activityType}
+                    </span>
+                    <span
+                      className={`px-1.5 py-0.5 text-[10px] font-medium rounded border capitalize ${badgeStyle}`}
+                    >
+                      {act.activityType}
+                    </span>
+                    {act.source === "strava" && (
+                      <span className="text-[10px] text-orange-500">strava</span>
+                    )}
+                  </div>
+                  <p className="text-xs font-medium text-gray-600">
+                    {dayName} {dateStr}
+                  </p>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-gray-500">
+                  <span className="font-mono text-xs">{act.duration}m</span>
+                  {act.distance && (
+                    <span className="font-mono text-xs">
+                      {act.distance.toFixed(1)} km
+                    </span>
+                  )}
+                  {act.avgHeartRate && (
+                    <span className="font-mono text-xs">
+                      {act.avgHeartRate} bpm
+                    </span>
+                  )}
+                  {act.rpe && (
+                    <span className="font-mono text-xs">RPE {act.rpe}</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Empty state */}
       {!isLoading &&
         ((filter === "gym" && sessions.length === 0) ||
           (filter === "running" && activities.length === 0) ||
+          (filter === "activities" && otherActivities.length === 0) ||
           (filter === "all" &&
             sessions.length === 0 &&
-            activities.length === 0)) && (
+            activities.length === 0 &&
+            otherActivities.length === 0)) && (
           <div className="text-center py-12 text-gray-400">
             <p className="text-lg font-medium">No history yet</p>
             <p className="text-sm mt-1">

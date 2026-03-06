@@ -978,6 +978,39 @@ export interface TodayTrainingPlan {
   };
 }
 
+// ─── Activity Types (non-run: swim, mobility, yoga, etc.) ────
+
+export interface Activity {
+  id: string;
+  date: string;
+  activityType: string;
+  source: string;
+  externalId: string | null;
+  duration: number;
+  distance: number | null;
+  avgHeartRate: number | null;
+  calories: number | null;
+  activityName: string | null;
+  rpe: number | null;
+  moodPost: number | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateActivityRequest {
+  activityType: string;
+  duration: number;
+  distance?: number;
+  avgHeartRate?: number;
+  calories?: number;
+  activityName?: string;
+  rpe?: number;
+  moodPost?: number;
+  notes?: string;
+  date?: string;
+}
+
 // ─── Coach Types ─────────────────────────────────
 
 export interface CoachPrescription {
@@ -1004,33 +1037,49 @@ export interface CoachTodaySnapshot {
     notes: string | null;
   } | null;
   prescription: CoachPrescription | null;
+  plannedSession: {
+    sessionType: string;
+    targetDistanceKm: number | null;
+    sessionName: string | null;
+    targetPaceZone: string | null;
+    notes: string | null;
+    status: string;
+  } | null;
+  activities?: Array<{
+    id: string;
+    activityType: string;
+    duration: number;
+    distance: number | null;
+    activityName: string | null;
+    source: string;
+  }>;
 }
 
 export interface CoachWeekDay {
-  dayOfWeek: number; // 1=Mon, 7=Sun
-  date: string; // YYYY-MM-DD
+  dayOfWeek: number;
+  date: string;
   prescription: CoachPrescription | null;
-  completedRuns: {
+  completedRuns: Array<{
     id: string;
     distance: number;
     duration: number;
-    avgPace: number;
+    avgPace: number | null;
     avgHeartRate: number | null;
     type: string;
     activityName: string | null;
-  }[];
-  completedGym: {
+  }>;
+  completedGym: Array<{
     id: string;
     sessionType: string;
     rpe: number | null;
-  }[];
-}
-
-export interface CoachWeek {
-  weekOffset: number;
-  monday: string;
-  sunday: string;
-  days: CoachWeekDay[];
+  }>;
+  completedActivities: Array<{
+    id: string;
+    activityType: string;
+    duration: number;
+    distance: number | null;
+    activityName: string | null;
+  }>;
 }
 
 // ─── Generic API Response ─────────────────────────

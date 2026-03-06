@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fitness } from "@tomos/api";
-import type { CreateRunSessionRequest } from "@tomos/api";
+import type { CreateRunSessionRequest, CreateActivityRequest } from "@tomos/api";
 
 export function useTodayRun() {
   return useQuery({
@@ -81,14 +81,37 @@ export function useCoachToday() {
   });
 }
 
-export function useCoachWeek(weekOffset: number) {
+// ─── Activities (non-run) ───────────────────────
+
+export function useActivities(params?: { days?: number; type?: string }) {
   return useQuery({
-    queryKey: ["fitness", "coach", "week", weekOffset],
-    queryFn: () => fitness.getCoachWeek(weekOffset),
+    queryKey: ["fitness", "activities", params],
+    queryFn: () => fitness.getActivities(params),
     select: (res) => res.data,
-    staleTime: 5 * 60 * 1000,
   });
 }
+
+export function useTodayActivities() {
+  return useQuery({
+    queryKey: ["fitness", "activities", "today"],
+    queryFn: () => fitness.getTodayActivities(),
+    select: (res) => res.data,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useCreateActivity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateActivityRequest) => fitness.createActivity(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["fitness", "activities"] });
+      queryClient.invalidateQueries({ queryKey: ["fitness", "coach"] });
+    },
+  });
+}
+
+// ─── Sync ───────────────────────────────────────
 
 export function useManualSync() {
   const queryClient = useQueryClient();

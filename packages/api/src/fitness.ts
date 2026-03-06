@@ -20,7 +20,8 @@ import type {
   HRZone,
   ZoneTime,
   CoachTodaySnapshot,
-  CoachWeek,
+  Activity,
+  CreateActivityRequest,
 } from "./types";
 
 // ─── Sessions ───────────────────────────────────
@@ -156,11 +157,26 @@ export async function getCoachToday(): Promise<{
   return get("/api/gym/coach/today");
 }
 
-export async function getCoachWeek(weekOffset?: number): Promise<{
+// ─── Activities (non-run) ───────────────────────
+
+export async function getActivities(params?: {
+  days?: number;
+  type?: string;
+}): Promise<{ success: boolean; data: { activities: Activity[]; count: number; days: number } }> {
+  return get("/api/gym/activities", params);
+}
+
+export async function createActivity(
+  data: CreateActivityRequest
+): Promise<{ success: boolean; data: Activity }> {
+  return post("/api/gym/activities", data);
+}
+
+export async function getTodayActivities(): Promise<{
   success: boolean;
-  data: CoachWeek;
+  data: { date: string; activities: Activity[]; count: number };
 }> {
-  return get("/api/gym/coach/week", weekOffset != null ? { weekOffset } : undefined);
+  return get("/api/gym/activities/today");
 }
 
 // ─── Recovery ───────────────────────────────────
