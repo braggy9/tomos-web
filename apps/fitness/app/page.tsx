@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTodayRun, useHRZones } from "../hooks/useRunning";
 import { Spinner } from "@tomos/ui";
 import type { WeekType } from "@tomos/api";
@@ -12,18 +12,13 @@ type Tab = "run" | "gym";
 
 export default function TodayPage() {
   const [weekType, setWeekType] = useState<WeekType>("non-kid");
-  const [activeTab, setActiveTab] = useState<Tab>("gym");
+  const [activeTab, setActiveTab] = useState<Tab>("run");
   const { data: todayRun, isLoading: runLoading } = useTodayRun();
   const { data: zonesData } = useHRZones(
     todayRun?.hasRun ? todayRun.run?.id : undefined
   );
 
-  // Auto-select Run tab when Strava run exists today
-  useEffect(() => {
-    if (todayRun?.hasRun) {
-      setActiveTab("run");
-    }
-  }, [todayRun?.hasRun]);
+  // Run tab is always default — no auto-switch needed
 
   if (runLoading) {
     return (

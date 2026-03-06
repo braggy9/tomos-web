@@ -1014,6 +1014,33 @@ export interface CoachTodaySnapshot {
   } | null;
 }
 
+export interface CoachWeekDay {
+  dayOfWeek: number; // 1=Mon, 7=Sun
+  date: string; // YYYY-MM-DD
+  prescription: CoachPrescription | null;
+  completedRuns: {
+    id: string;
+    distance: number;
+    duration: number;
+    avgPace: number;
+    avgHeartRate: number | null;
+    type: string;
+    activityName: string | null;
+  }[];
+  completedGym: {
+    id: string;
+    sessionType: string;
+    rpe: number | null;
+  }[];
+}
+
+export interface CoachWeek {
+  weekOffset: number;
+  monday: string;
+  sunday: string;
+  days: CoachWeekDay[];
+}
+
 // ─── Generic API Response ─────────────────────────
 
 export interface ApiResponse<T> {

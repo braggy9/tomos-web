@@ -81,6 +81,15 @@ export function useCoachToday() {
   });
 }
 
+export function useCoachWeek(weekOffset: number) {
+  return useQuery({
+    queryKey: ["fitness", "coach", "week", weekOffset],
+    queryFn: () => fitness.getCoachWeek(weekOffset),
+    select: (res) => res.data,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useManualSync() {
   const queryClient = useQueryClient();
   return useMutation({

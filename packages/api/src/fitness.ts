@@ -20,6 +20,7 @@ import type {
   HRZone,
   ZoneTime,
   CoachTodaySnapshot,
+  CoachWeek,
 } from "./types";
 
 // ─── Sessions ───────────────────────────────────
@@ -153,6 +154,13 @@ export async function getCoachToday(): Promise<{
   data: CoachTodaySnapshot;
 }> {
   return get("/api/gym/coach/today");
+}
+
+export async function getCoachWeek(weekOffset?: number): Promise<{
+  success: boolean;
+  data: CoachWeek;
+}> {
+  return get("/api/gym/coach/week", weekOffset != null ? { weekOffset } : undefined);
 }
 
 // ─── Recovery ───────────────────────────────────
