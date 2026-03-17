@@ -20,10 +20,10 @@ export function useSuggestion(weekType?: FitnessWeekType) {
   });
 }
 
-export function useSessions(limit?: number) {
+export function useSessions(params?: number | { limit?: number; offset?: number; type?: string }) {
   return useQuery({
-    queryKey: ["sessions", limit],
-    queryFn: () => fitness.getSessions(limit),
+    queryKey: ["sessions", params],
+    queryFn: () => fitness.getSessions(params),
     select: (res) => res.data,
   });
 }
