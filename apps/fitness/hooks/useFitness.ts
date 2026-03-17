@@ -24,7 +24,7 @@ export function useSessions(params?: number | { limit?: number; offset?: number;
   return useQuery({
     queryKey: ["sessions", params],
     queryFn: () => fitness.getSessions(params),
-    select: (res) => res.data,
+    select: (res) => ({ sessions: res.data, pagination: res.pagination }),
   });
 }
 
