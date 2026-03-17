@@ -7,6 +7,7 @@ import type {
   Exercise,
   QuickLogRequest,
   CreateRecoveryRequest,
+  CreateRecoveryCheckInRequest,
   Pagination,
   WeekType,
   UserSettings,
@@ -215,7 +216,7 @@ export async function getRecoveryHistory(
 }
 
 export async function createRecoveryCheckIn(
-  data: CreateRecoveryRequest
+  data: CreateRecoveryCheckInRequest
 ): Promise<{ success: boolean; data: RecoveryCheckin }> {
   return post("/api/gym/recovery", data);
 }
