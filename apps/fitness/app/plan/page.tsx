@@ -7,25 +7,33 @@ import type { CoachWeekDay } from "@tomos/api";
 // ─── Training Phases (hardcoded from living doc) ────────────
 
 const TRAINING_PHASES = [
-  { name: "Rebuild", start: "2026-03-01", end: "2026-04-10", target: "Jabulani 22km", phase: "rebuild" },
-  { name: "Base Building", start: "2026-04-11", end: "2026-05-31", target: "UTA 22km", phase: "base" },
-  { name: "Marathon Specific", start: "2026-06-01", end: "2026-07-04", target: "GC Marathon", phase: "specific" },
-  { name: "Recovery + Transition", start: "2026-07-06", end: "2026-07-20", target: null, phase: "recovery" },
-  { name: "Sydney Marathon Block", start: "2026-07-21", end: "2026-08-29", target: "Sydney Marathon", phase: "specific" },
-  { name: "Trail Pivot", start: "2026-09-01", end: "2026-10-31", target: "Hounslow 17km", phase: "build" },
-  { name: "Kosi Peak", start: "2026-10-15", end: "2026-11-27", target: "Kosi 50km", phase: "build" },
+  { name: "Rebuild", start: "2026-03-01", end: "2026-04-12", target: "Jabulani 22km", targetDate: "2026-04-11", phase: "rebuild" },
+  { name: "Base Building", start: "2026-04-13", end: "2026-05-31", target: null, targetDate: null, phase: "base" },
+  { name: "Marathon Specific", start: "2026-06-01", end: "2026-07-05", target: "Gold Coast Marathon", targetDate: "2026-07-05", phase: "specific" },
+  { name: "Recovery + Transition", start: "2026-07-06", end: "2026-07-20", target: null, targetDate: null, phase: "recovery" },
+  { name: "Sunshine Coast Block", start: "2026-07-21", end: "2026-08-03", target: "Sunshine Coast Marathon", targetDate: "2026-08-02", phase: "specific" },
+  { name: "Trail Pivot", start: "2026-08-04", end: "2026-10-14", target: "Hounslow 17km", targetDate: "2026-09-11", phase: "build" },
+  { name: "Kosi Peak", start: "2026-10-15", end: "2026-11-27", target: "Ultra-Trail Kosciuszko 50km", targetDate: "2026-11-26", phase: "build" },
 ];
 
 // ─── Races ──────────────────────────────────────────────────
 
-const RACES = [
-  { name: "Jabulani 22km", date: "2026-04-11" },
-  { name: "UTA 22km", date: "2026-05-15" },
-  { name: "GC Marathon", date: "2026-07-05" },
-  { name: "Sunny Coast", date: "2026-08-02" },
-  { name: "Sydney Marathon", date: "2026-08-30" },
-  { name: "Hounslow 17km", date: "2026-09-12" },
-  { name: "Kosi 50km", date: "2026-11-27" },
+interface Race {
+  name: string;
+  date: string;
+  distance?: string;
+  isArace?: boolean;
+}
+
+const RACES: Race[] = [
+  { name: "Sri Chinmoy CP Half", date: "2026-04-06", distance: "21.1km" },
+  { name: "Jabulani 22km", date: "2026-04-11", distance: "22km" },
+  { name: "Sri Chinmoy Iron Cove", date: "2026-06-07", distance: "21.1km" },
+  { name: "GC Marathon", date: "2026-07-05", distance: "42.2km" },
+  { name: "Sri Chinmoy Dolls Pt", date: "2026-07-12", distance: "21.1km" },
+  { name: "Sunshine Coast", date: "2026-08-02", distance: "42.2km", isArace: true },
+  { name: "Hounslow 17km", date: "2026-09-11", distance: "17km" },
+  { name: "Kosi 50km", date: "2026-11-26", distance: "50km", isArace: true },
 ];
 
 // ─── Social Runs (recurring) ────────────────────────────────
@@ -33,10 +41,18 @@ const RACES = [
 const SOCIAL_RUNS: { name: string; dayOfWeek: number; time: string }[] = [
   { name: "Pace", dayOfWeek: 1, time: "6pm" },
   { name: "CRC", dayOfWeek: 2, time: "6:30pm" },
-  { name: "CRC", dayOfWeek: 3, time: "6:30am" },
+  { name: "CRC Speed", dayOfWeek: 3, time: "6:30am" },
   { name: "CRC", dayOfWeek: 4, time: "6:15am" },
   { name: "parkrun", dayOfWeek: 6, time: "7am" },
   { name: "CRC", dayOfWeek: 7, time: "8am" },
+];
+
+// ─── Rejoov Training Group (recurring, when confirmed) ───────
+
+const REJOOV_RUNS: { name: string; dayOfWeek: number; time: string }[] = [
+  { name: "Rejoov", dayOfWeek: 2, time: "5:55am" },
+  { name: "Rejoov", dayOfWeek: 4, time: "5:55am" },
+  { name: "Rejoov LR", dayOfWeek: 6, time: "TBD" },
 ];
 
 // ─── Styling ────────────────────────────────────────────────
@@ -67,10 +83,10 @@ const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 // ─── Helpers ────────────────────────────────────────────────
 
 function getCurrentPhase(mondayStr: string) {
-  const monday = new Date(mondayStr);
+  const monday = new Date(mondayStr + "T12:00:00");
   return TRAINING_PHASES.find((p) => {
-    const start = new Date(p.start);
-    const end = new Date(p.end);
+    const start = new Date(p.start + "T00:00:00");
+    const end = new Date(p.end + "T23:59:59");
     return monday >= start && monday <= end;
   });
 }
@@ -94,6 +110,10 @@ function getSocialRunsForDay(dayOfWeek: number) {
   return SOCIAL_RUNS.filter((s) => s.dayOfWeek === dayOfWeek);
 }
 
+function getRejoovRunsForDay(dayOfWeek: number) {
+  return REJOOV_RUNS.filter((s) => s.dayOfWeek === dayOfWeek);
+}
+
 function getTodayStr(): string {
   // Approximate Sydney date — good enough for highlighting
   const now = new Date();
@@ -109,12 +129,7 @@ function PhaseHeader({ monday }: { monday: string }) {
 
   const style = PHASE_STYLE[phase.phase] || PHASE_STYLE.rebuild;
   const deload = isDeloadWeek(monday, phase.start);
-  const weeksLeft = phase.target ? getWeeksUntil(phase.target === "Jabulani 22km" ? "2026-04-11" :
-    phase.target === "UTA 22km" ? "2026-05-15" :
-    phase.target === "GC Marathon" ? "2026-07-05" :
-    phase.target === "Sydney Marathon" ? "2026-08-30" :
-    phase.target === "Hounslow 17km" ? "2026-09-12" :
-    phase.target === "Kosi 50km" ? "2026-11-27" : monday, monday) : null;
+  const weeksLeft = phase.targetDate ? getWeeksUntil(phase.targetDate, monday) : null;
 
   return (
     <div className={`${style.bg} ${style.border} border rounded-xl p-4`}>
@@ -144,6 +159,7 @@ function PhaseHeader({ monday }: { monday: string }) {
 function DayCard({ day, isToday }: { day: CoachWeekDay; isToday: boolean }) {
   const race = getRaceForDate(day.date);
   const socialRuns = getSocialRunsForDay(day.dayOfWeek);
+  const rejoovRuns = getRejoovRunsForDay(day.dayOfWeek);
   const hasContent = day.prescription || day.completedRuns.length > 0 || day.completedGym.length > 0 || (day.completedActivities?.length ?? 0) > 0 || race;
 
   return (
@@ -165,8 +181,12 @@ function DayCard({ day, isToday }: { day: CoachWeekDay; isToday: boolean }) {
           </span>
         </div>
         {race && (
-          <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
-            {race.name}
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+            race.isArace
+              ? "text-red-700 bg-red-100 border-red-300"
+              : "text-red-600 bg-red-50 border-red-200"
+          }`}>
+            {race.isArace ? "🏆 " : ""}{race.name}
           </span>
         )}
       </div>
@@ -267,12 +287,20 @@ function DayCard({ day, isToday }: { day: CoachWeekDay; isToday: boolean }) {
       })}
 
       {/* Social runs (faded) */}
-      {socialRuns.length > 0 && !race && (
+      {(socialRuns.length > 0 || rejoovRuns.length > 0) && !race && (
         <div className="flex flex-wrap gap-1">
           {socialRuns.map((s) => (
             <span
               key={s.name + s.dayOfWeek}
               className="text-[9px] text-gray-300 bg-gray-50 px-1.5 py-0.5 rounded"
+            >
+              {s.name} {s.time}
+            </span>
+          ))}
+          {rejoovRuns.map((s) => (
+            <span
+              key={s.name + s.dayOfWeek}
+              className="text-[9px] text-orange-300 bg-orange-50 px-1.5 py-0.5 rounded"
             >
               {s.name} {s.time}
             </span>
