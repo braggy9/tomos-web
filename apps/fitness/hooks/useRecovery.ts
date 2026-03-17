@@ -2,13 +2,13 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fitness } from "@tomos/api";
-import type { CreateRecoveryCheckInRequest, CreateRecoveryRequest } from "@tomos/api";
+import type { CreateRecoveryCheckInRequest, CreateRecoveryRequest, FitnessRecoveryCheckIn } from "@tomos/api";
 
 export function useTodayRecovery() {
   return useQuery({
     queryKey: ["recovery-today"],
     queryFn: () => fitness.getTodayRecovery(),
-    select: (res) => res.data,
+    select: (res) => res.data as FitnessRecoveryCheckIn | null,
   });
 }
 
