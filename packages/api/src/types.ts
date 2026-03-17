@@ -878,8 +878,9 @@ export interface FitnessDailyPlan {
   context: string;
 }
 
-// Alias for backwards compatibility
+// Aliases for backwards compatibility
 export type FitnessQuickLogRequest = QuickLogRequest;
+export type FitnessWeekType = WeekType;
 
 // ─── Training Plan Types ───────────────────────────
 
@@ -1087,6 +1088,209 @@ export interface CoachWeekResponse {
   monday: string;
   sunday: string;
   days: CoachWeekDay[];
+}
+
+// ─── Life Module Types ──────────────────────────────
+
+export type GoalCategory = "health" | "family" | "career" | "financial" | "creative" | "social" | "learning";
+export type GoalTimeframe = "weekly" | "monthly" | "quarterly" | "yearly";
+export type GoalStatus = "active" | "completed" | "paused" | "abandoned";
+
+export type HabitFrequency = "daily" | "weekdays" | "weekends" | "mon_wed_fri" | "tue_thu" | "custom";
+export type HabitStatus = "active" | "paused" | "archived";
+
+export type ShoppingCategory = "produce" | "dairy" | "meat" | "pantry" | "household" | "other";
+
+export type WeeklyPlanStatus = "draft" | "active" | "completed";
+
+export interface Goal {
+  id: string;
+  title: string;
+  description: string | null;
+  category: GoalCategory;
+  timeframe: GoalTimeframe;
+  status: GoalStatus;
+  progress: number;
+  targetDate: string | null;
+  completedAt: string | null;
+  parentId: string | null;
+  children?: Goal[];
+  habits?: Habit[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Habit {
+  id: string;
+  title: string;
+  description: string | null;
+  frequency: HabitFrequency;
+  customDays: number[];
+  category: string | null;
+  icon: string | null;
+  status: HabitStatus;
+  streakCurrent: number;
+  streakBest: number;
+  goalId: string | null;
+  goal?: Goal | null;
+  logs?: HabitLog[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HabitLog {
+  id: string;
+  habitId: string;
+  date: string;
+  completed: boolean;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface ShoppingItem {
+  id: string;
+  name: string;
+  quantity: string | null;
+  category: string | null;
+  checked: boolean;
+  listId: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WeeklyPlan {
+  id: string;
+  weekStart: string;
+  energyLevel: number | null;
+  kidWeek: boolean | null;
+  priorities: WeeklyPlanPriority[] | null;
+  intentions: WeeklyPlanIntention[] | null;
+  reflection: string | null;
+  satisfactionScore: number | null;
+  status: WeeklyPlanStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WeeklyPlanPriority {
+  title: string;
+  category?: string;
+  status?: string;
+}
+
+export interface WeeklyPlanIntention {
+  day: string;
+  focus: string;
+  notes?: string;
+}
+
+export interface HabitCheckIn {
+  habit: Habit;
+  completedToday: boolean;
+  streak: number;
+}
+
+export interface TodaySnapshot {
+  date: string;
+  dayOfWeek: string;
+  habits: {
+    items: HabitCheckIn[];
+    completed: number;
+    total: number;
+  };
+  shopping: {
+    uncheckedCount: number;
+  };
+  plan: WeeklyPlan | null;
+  tasks: Array<{
+    id: string;
+    title: string;
+    status: string;
+    priority: string;
+    dueDate: string | null;
+  }>;
+  journal: {
+    mood: string | null;
+    energy: string | null;
+    entryDate: string | null;
+  } | null;
+  training: {
+    prescription: CoachPrescription | null;
+  } | null;
+}
+
+export interface CreateGoalRequest {
+  title: string;
+  description?: string;
+  category: GoalCategory;
+  timeframe: GoalTimeframe;
+  targetDate?: string;
+  parentId?: string;
+}
+
+export interface UpdateGoalRequest {
+  title?: string;
+  description?: string;
+  category?: GoalCategory;
+  timeframe?: GoalTimeframe;
+  status?: GoalStatus;
+  progress?: number;
+  targetDate?: string | null;
+}
+
+export interface CreateHabitRequest {
+  title: string;
+  description?: string;
+  frequency: HabitFrequency;
+  customDays?: number[];
+  category?: string;
+  icon?: string;
+  goalId?: string;
+}
+
+export interface UpdateHabitRequest {
+  title?: string;
+  description?: string;
+  frequency?: HabitFrequency;
+  customDays?: number[];
+  category?: string;
+  icon?: string;
+  status?: HabitStatus;
+  goalId?: string | null;
+}
+
+export interface CreateShoppingItemRequest {
+  name: string;
+  quantity?: string;
+  category?: ShoppingCategory;
+  listId?: string;
+}
+
+export interface UpdateShoppingItemRequest {
+  name?: string;
+  quantity?: string;
+  category?: string;
+  checked?: boolean;
+  sortOrder?: number;
+}
+
+export interface CreateWeeklyPlanRequest {
+  weekStart: string;
+  energyLevel?: number;
+  kidWeek?: boolean;
+  priorities?: WeeklyPlanPriority[];
+  intentions?: WeeklyPlanIntention[];
+}
+
+export interface UpdateWeeklyPlanRequest {
+  energyLevel?: number;
+  kidWeek?: boolean;
+  priorities?: WeeklyPlanPriority[];
+  intentions?: WeeklyPlanIntention[];
+  reflection?: string;
+  satisfactionScore?: number;
+  status?: WeeklyPlanStatus;
 }
 
 // ─── Generic API Response ─────────────────────────

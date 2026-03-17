@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fitness } from "@tomos/api";
-import type { CreateRecoveryCheckInRequest } from "@tomos/api";
+import type { CreateRecoveryCheckInRequest, CreateRecoveryRequest } from "@tomos/api";
 
 export function useTodayRecovery() {
   return useQuery({
@@ -24,6 +24,27 @@ export function useCreateCheckIn() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateRecoveryCheckInRequest) => fitness.createRecoveryCheckIn(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["recovery-today"] });
+      queryClient.invalidateQueries({ queryKey: ["recovery-history"] });
+      queryClient.invalidateQueries({ queryKey: ["daily-plan"] });
+    },
+  });
+}
+
+// Aliases used by older pages
+export function useRecoveryCheckins(days?: number) {
+  return useQuery({
+    queryKey: ["recovery-history", days],
+    queryFn: () => fitness.getRecoveryCheckins(days),
+    select: (res) => res.data,
+  });
+}
+
+export function useSubmitRecovery() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateRecoveryRequest) => fitness.submitRecovery(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recovery-today"] });
       queryClient.invalidateQueries({ queryKey: ["recovery-history"] });

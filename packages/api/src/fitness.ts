@@ -27,13 +27,10 @@ import type {
 
 // ─── Sessions ───────────────────────────────────
 
-export async function getSessions(params?: {
-  type?: string;
-  from?: string;
-  to?: string;
-  limit?: number;
-  offset?: number;
-}): Promise<{ success: boolean; data: GymSession[]; pagination: Pagination }> {
+export async function getSessions(
+  paramsOrLimit?: { type?: string; from?: string; to?: string; limit?: number; offset?: number } | number
+): Promise<{ success: boolean; data: GymSession[]; pagination: Pagination }> {
+  const params = typeof paramsOrLimit === "number" ? { limit: paramsOrLimit } : paramsOrLimit;
   return get("/api/gym/sessions", params);
 }
 
@@ -52,6 +49,12 @@ export async function quickLog(
 // ─── Suggestions ────────────────────────────────
 
 export async function getSuggestion(
+  weekType?: WeekType
+): Promise<{ success: boolean; data: SessionSuggestion }> {
+  return get("/api/gym/suggest", weekType ? { weekType } : undefined);
+}
+
+export async function getDailyPlan(
   weekType?: WeekType
 ): Promise<{ success: boolean; data: SessionSuggestion }> {
   return get("/api/gym/suggest", weekType ? { weekType } : undefined);
@@ -199,4 +202,33 @@ export async function submitRecovery(
   data: CreateRecoveryRequest
 ): Promise<{ success: boolean; data: RecoveryCheckin }> {
   return post("/api/gym/recovery", data);
+}
+
+export async function getTodayRecovery(): Promise<{ success: boolean; data: RecoveryCheckin | null }> {
+  return get("/api/gym/recovery/today");
+}
+
+export async function getRecoveryHistory(
+  limit?: number
+): Promise<{ success: boolean; data: RecoveryCheckin[] }> {
+  return get("/api/gym/recovery", limit ? { days: limit } : undefined);
+}
+
+export async function createRecoveryCheckIn(
+  data: CreateRecoveryRequest
+): Promise<{ success: boolean; data: RecoveryCheckin }> {
+  return post("/api/gym/recovery", data);
+}
+
+// ─── Progress ───────────────────────────────────
+
+export async function getProgress(
+  exerciseId: string,
+  period?: number
+): Promise<{ success: boolean; data: unknown }> {
+  return get("/api/gym/progress", { exerciseId, ...(period ? { period } : {}) });
+}
+
+export async function getProgressSummary(): Promise<{ success: boolean; data: unknown }> {
+  return get("/api/gym/progress/summary");
 }
