@@ -1,0 +1,6 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "cd ../.. && pnpm turbo build --filter=@tomos/tasks...",
+  "outputDirectory": ".next",
+  "installCommand": "cd ../.. && pnpm install"
+}

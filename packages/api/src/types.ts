@@ -6,15 +6,21 @@ export type TaskPriority = "Urgent" | "Important" | "Someday";
 export interface Task {
   id: string;
   title: string;
+  description?: string | null;
   status: TaskStatus;
   priority: TaskPriority | null;
   context: string[];
   dueDate: string | null;
+  completedAt?: string | null;
   energy: string | null;
   time: string | null;
   parentId?: string | null;
   subtaskCount?: number;
   subtasks?: Task[];
+  project?: { id: string; title: string; color?: string | null } | null;
+  tags?: { id: string; name: string }[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreateTaskRequest {

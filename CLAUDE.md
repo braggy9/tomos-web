@@ -2,7 +2,7 @@
 
 ## What This Repo Is
 
-Six independent Next.js web apps for personal productivity, sharing a common design system and API client. Each app does one thing well, replacing the bloated TomOS Swift monolith. **This is the primary client for TomOS. Swift native apps are deprecated.**
+Seven independent Next.js web apps for personal productivity, sharing a common design system and API client. Each app does one thing well, replacing the bloated TomOS Swift monolith. **This is the primary client for TomOS. Swift native apps are deprecated.**
 
 **Monorepo:** pnpm workspaces + Turborepo
 **Framework:** Next.js 15 (App Router)
@@ -26,6 +26,7 @@ Six independent Next.js web apps for personal productivity, sharing a common des
 | Journal | https://tomos-journal.vercel.app | 3004 | Reflective journaling with AI companion |
 | Fitness | https://tomos-fitness.vercel.app | 3005 | Gym session logging, recovery check-ins, progressive overload |
 | Legal | https://tomos-legal.vercel.app | 3006 | Legal dashboard, clause library browser, contract review history |
+| Life | https://tomos-life.vercel.app | 3007 | Goals, habits, shopping list, weekly planning |
 
 ## Structure
 
@@ -37,7 +38,8 @@ tomos-web/
 │   ├── matters/        # @tomos/matters — Legal matters
 │   ├── journal/        # @tomos/journal — Journal + AI companion
 │   ├── fitness/        # @tomos/fitness — Gym session logging + recovery
-│   └── legal/          # @tomos/legal — Legal dashboard + clause library
+│   ├── legal/          # @tomos/legal — Legal dashboard + clause library
+│   └── life/           # @tomos/life — Goals, habits, shopping, weekly plans
 ├── packages/
 │   ├── api/            # @tomos/api — Shared API client + types
 │   ├── ui/             # @tomos/ui — Shared React components
@@ -230,6 +232,42 @@ Each app deploys as a separate Vercel project from this monorepo. To deploy:
 - **Garmin is stubs-only** — all endpoints return 501 "Garmin Connect not configured yet"
 - **Cron scheduled** — `POST /api/cron/gym-suggestion` runs via GitHub Actions at 6:30am Sydney daily
 
+## Life App Details
+
+### Features
+- **Today tab**: Aggregated daily dashboard — habits checklist, weekly priorities, shopping count, open tasks, journal mood, training prescription. Single API call to `/api/life/today`.
+- **Plan tab**: Weekly plan editor — energy level (1-5), kid week toggle, priorities with category badges, daily focus intentions per day of week.
+- **Habits tab**: Active habits with streak display (flame emoji at 7+ days), tap-to-complete, progress bar, create new habits with frequency/icon/category.
+- **Shop tab**: Shopping list grouped by category (produce, dairy, meat, pantry, household, other). Quick add with plain or AI parse mode. Check-off items, clear checked.
+- **Goals tab**: Goal cards with progress bars (quick 0/25/50/75/100% buttons), category badges, timeframe labels, linked habits, sub-goals display.
+
+### Architecture
+- Mobile-first PWA with violet-600 brand colour
+- 5-tab BottomNav (Today, Plan, Habits, Shop, Goals) + desktop sidebar with cross-app links
+- All data from `/api/life/*` endpoints on TomOS backend
+- No AI in PWA — AI lives in Claude skills
+
+### Hooks (`apps/life/hooks/`)
+- `useLifeToday.ts` — calls `/api/life/today` for aggregated snapshot
+- `useGoals.ts` — CRUD for goals (list, get, create, update, delete)
+- `useHabits.ts` — CRUD + check-in + log for habits
+- `useShopping.ts` — CRUD + check + clear + NLP parse for shopping
+- `usePlans.ts` — weekly plan CRUD + current week auto-create
+
+### Components (`apps/life/components/`)
+- `BottomNav.tsx` — 5 tabs + desktop sidebar with cross-app links
+- `HabitRow.tsx` — habit with completion circle, icon, streak badge
+- `ShoppingItemRow.tsx` — item with check circle, quantity, hover-delete
+- `PriorityCard.tsx` — priority with category colour badge
+
+### Backend Endpoints (under `/api/life/`)
+- Goals: `GET/POST /api/life/goals`, `GET/PATCH/DELETE /api/life/goals/[id]`
+- Habits: `GET/POST /api/life/habits`, `GET/PATCH/DELETE /api/life/habits/[id]`, `POST /api/life/habits/[id]/log`
+- Habits check-in: `GET/POST /api/life/habits/check-in`
+- Shopping: `GET/POST /api/life/shopping`, `PATCH/DELETE /api/life/shopping/[id]`, `POST /api/life/shopping/check`, `POST /api/life/shopping/clear`, `POST /api/life/shopping/parse`
+- Plans: `GET/POST /api/life/plans`, `GET /api/life/plans/current`, `PATCH /api/life/plans/[id]`
+- Dashboard: `GET /api/life/today` (aggregated snapshot from habits, shopping, plans, tasks, journal, training)
+
 ## Keyboard Shortcuts
 
 All apps implement `KeyboardShortcuts.tsx` mounted in `app/layout.tsx`.
@@ -241,6 +279,7 @@ All apps implement `KeyboardShortcuts.tsx` mounted in `app/layout.tsx`.
 | Matters | `Cmd+N` | New matter |
 | Journal | `Cmd+N` | New entry |
 | Fitness | `Cmd+N` | New session log |
+| Life | `Cmd+N` | Go to habits page |
 | All apps | `Cmd+Option+E` | Open `mailto:tasks@tomos.run` in default email client |
 
 **Cmd+Option+E pattern** (in KeyboardShortcuts.tsx):
