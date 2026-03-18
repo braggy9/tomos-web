@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
-  "buildCommand": "pnpm turbo build --filter=@tomos/fitness...",
-  "outputDirectory": "apps/fitness/.next",
+  "buildCommand": "pnpm turbo build --filter=@tomos/tasks...",
+  "outputDirectory": "apps/tasks/.next",
   "installCommand": "pnpm install"
 }
