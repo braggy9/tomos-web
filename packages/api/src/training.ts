@@ -5,6 +5,9 @@ import type {
   TrainingWeekWithProgress,
   TodayTrainingPlan,
   PlannedSession,
+  RaceLogisticsResponse,
+  ParentingScheduleResponse,
+  UpdateRaceCostsRequest,
 } from "./types";
 
 // ─── Blocks ────────────────────────────────────
@@ -61,4 +64,27 @@ export async function getToday(): Promise<{
   data: TodayTrainingPlan;
 }> {
   return get("/api/training/today");
+}
+
+// ─── Race Operations ──────────────────────────
+
+export async function getRaceLogistics(refresh?: boolean): Promise<{
+  success: boolean;
+  data: RaceLogisticsResponse;
+}> {
+  return get("/api/training/race-logistics", refresh ? { refresh: "true" } : undefined);
+}
+
+export async function getParentingSchedule(refresh?: boolean): Promise<{
+  success: boolean;
+  data: ParentingScheduleResponse;
+}> {
+  return get("/api/training/parenting-schedule", refresh ? { refresh: "true" } : undefined);
+}
+
+export async function updateRaceCosts(
+  raceId: string,
+  data: UpdateRaceCostsRequest
+): Promise<{ success: boolean; data: unknown }> {
+  return patch(`/api/training/race-logistics/${raceId}/costs`, data);
 }

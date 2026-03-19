@@ -1299,6 +1299,106 @@ export interface UpdateWeeklyPlanRequest {
   status?: WeeklyPlanStatus;
 }
 
+// ─── Race Operations Types ───────────────────────────
+
+export type EntryStatus = "registered" | "chasing" | "waitlisted" | "tbc" | "dropped";
+export type LogisticsStatus = "sorted" | "outstanding" | "urgent";
+export type RaceType = "road" | "trail";
+
+export interface ChecklistItem {
+  text: string;
+  checked: boolean;
+}
+
+export interface RaceCosts {
+  entryFee: { amount: number | null; paid: boolean; note: string | null };
+  accommodation: { estimated: number | null; booked: number | null; note: string | null };
+  travel: { estimated: number | null; booked: number | null; note: string | null };
+  gear: { amount: number | null; note: string | null };
+  food: { amount: number | null; note: string | null };
+  other: { amount: number | null; note: string | null };
+  total: number;
+}
+
+export interface RaceCard {
+  id: string;
+  name: string;
+  shortName: string;
+  date: string | null;
+  dateDisplay: string;
+  distance: string;
+  type: RaceType;
+  location: string;
+  entryStatus: EntryStatus;
+  logisticsStatus: LogisticsStatus;
+  daysOut: number | null;
+  isARace: boolean;
+  kidsWeek: boolean | null;
+  custodyNote: string | null;
+  needsChildcare: boolean;
+  childcareSorted: boolean;
+  needsAccommodation: boolean;
+  accommodationSorted: boolean;
+  needsTravel: boolean;
+  travelSorted: boolean;
+  needsMiloCare: boolean;
+  miloCareSorted: boolean;
+  checklists: {
+    entry: ChecklistItem[];
+    kidsWeekLogistics: ChecklistItem[] | null;
+    supportCrew: ChecklistItem[];
+    accommodation: ChecklistItem[] | null;
+    travel: ChecklistItem[];
+    gearNutrition: ChecklistItem[];
+    raceWeek: ChecklistItem[];
+  };
+  costs: RaceCosts;
+  notes: string | null;
+  raceShoes: string | null;
+  target: string | null;
+}
+
+export interface SeasonCost {
+  totalPaid: number;
+  totalEstimated: number;
+  byCategory: {
+    entries: number;
+    accommodation: number;
+    travel: number;
+    gear: number;
+    food: number;
+    other: number;
+  };
+}
+
+export interface CustodyWeek {
+  startDate: string;
+  endDate: string;
+  status: "kids" | "solo";
+  raceNote: string | null;
+  hasRaceConflict: boolean;
+}
+
+export interface RaceLogisticsResponse {
+  lastFetched: string;
+  races: RaceCard[];
+  seasonCost: SeasonCost;
+}
+
+export interface ParentingScheduleResponse {
+  lastFetched: string;
+  weeks: CustodyWeek[];
+}
+
+export interface UpdateRaceCostsRequest {
+  entryFee?: { amount: number; paid: boolean; note?: string };
+  accommodation?: { estimated?: number; booked?: number; note?: string };
+  travel?: { estimated?: number; booked?: number; note?: string };
+  gear?: { amount: number; note?: string };
+  food?: { amount: number; note?: string };
+  other?: { amount: number; note?: string };
+}
+
 // ─── Generic API Response ─────────────────────────
 
 export interface ApiResponse<T> {
