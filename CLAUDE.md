@@ -21,6 +21,7 @@ Seven independent Next.js web apps for personal productivity, sharing a common d
 | App | URL | Port | Purpose |
 |-----|-----|------|---------|
 | Tasks | https://tomos-tasks.vercel.app | 3001 | Task management, subtasks, brain dump, smart surface |
+| Legal MCP | https://tomos-legal-mcp.vercel.app | 3008 | Remote MCP server — legal prompts, skills, reference resources |
 | Notes | https://tomos-notes.vercel.app | 3002 | Professional notes with smart linking, markdown rendering, templates |
 | Matters | https://tomos-matters.vercel.app | 3003 | Legal matter management |
 | Journal | https://tomos-journal.vercel.app | 3004 | Reflective journaling with AI companion |
@@ -44,6 +45,7 @@ tomos-web/
 │   ├── api/            # @tomos/api — Shared API client + types
 │   ├── ui/             # @tomos/ui — Shared React components
 │   └── config/         # @tomos/config — Shared Tailwind/TS configs
+│   └── legal-mcp/      # @tomos/legal-mcp — Remote MCP server (legal skills)
 ├── turbo.json
 ├── pnpm-workspace.yaml
 └── vercel.json         # Switched per-app for deployment
@@ -196,7 +198,18 @@ Each app deploys as a separate Vercel project from this monorepo. To deploy:
 ### Fitness Components (`apps/fitness/components/`)
 - `RunLogPanel.tsx` — Auto-populated run data + subjective logging form. Exports `NoRunPanel` for no-run state.
 - `GymLogPanel.tsx` — Extracted gym logger with mood post addition.
-- `BottomNav.tsx` — 5 tabs: Today, Plan, History, Dashboard, Recovery. Desktop sidebar with Settings + cross-app links.
+- `BottomNav.tsx` — 6 tabs: Today, Plan, History, Dashboard, Races, Recovery. Desktop sidebar with Settings + cross-app links.
+- `RaceCalendarOverlay.tsx` — Month-by-month timeline with custody-coloured week rows, road/trail race chips, status dots, logistics flags.
+- `RaceDetailCard.tsx` — Drill-down card with checklists, status badges, Milo care, cost summary, days-out countdown.
+- `CostTracker.tsx` — Season cost summary with category breakdown + per-race table.
+
+### Race Operations (`/races` route, added 2026-03-19)
+- **Calendar view (default):** Month-by-month timeline showing all custody weeks. Race chips overlaid on relevant weeks with colour-coding (road=blue, trail=teal). Status dots (green/amber/red). Logistics flags (childcare, accom, travel, Milo). Current week highlighted with red left-border.
+- **Costs view:** Season summary card (paid/estimated/projected) + per-race cost table.
+- **Race detail:** Tap any race chip → drill-down with checklists from Notion, status badges, days-out countdown, cost breakdown.
+- **Data source:** `GET /api/training/race-logistics` (Notion + Postgres costs), `GET /api/training/parenting-schedule` (Notion custody weeks). 15-min cache with `?refresh=true` bust.
+- **Notion integration:** Parses Race Logistics 2026 page + Training Hub parenting schedule. Falls back to hardcoded 2026 season data if Notion unavailable. Requires pages shared with Notion integration.
+- **Hooks:** `useRaces.ts` — `useRaceLogistics()`, `useParentingSchedule()`, `useRefreshRaceData()`, `useUpdateRaceCosts()`
 
 ### Backend Endpoints (26 routes under `/api/gym/`)
 **Original:**
