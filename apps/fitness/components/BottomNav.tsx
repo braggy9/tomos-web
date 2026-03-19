@@ -148,6 +148,7 @@ export function BottomNav() {
             { name: "Notes", url: "https://tomos-notes.vercel.app" },
             { name: "Journal", url: "https://tomos-journal.vercel.app" },
             { name: "Matters", url: "https://tomos-matters.vercel.app" },
+            { name: "Legal", url: "https://tomos-legal.vercel.app" },
             { name: "Life", url: "https://tomos-life.vercel.app" },
           ].map((app) => (
             <a
