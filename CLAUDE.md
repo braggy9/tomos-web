@@ -2,7 +2,7 @@
 
 ## What This Repo Is
 
-Seven independent Next.js web apps for personal productivity, sharing a common design system and API client. Each app does one thing well, replacing the bloated TomOS Swift monolith. **This is the primary client for TomOS. Swift native apps are deprecated.**
+Six independent Next.js web apps for personal productivity, sharing a common design system and API client. Each app does one thing well, replacing the bloated TomOS Swift monolith. **This is the primary client for TomOS. Swift native apps are deprecated. Tasks migrated to Todoist.**
 
 **Monorepo:** pnpm workspaces + Turborepo
 **Framework:** Next.js 15 (App Router)
@@ -20,7 +20,6 @@ Seven independent Next.js web apps for personal productivity, sharing a common d
 
 | App | URL | Port | Purpose |
 |-----|-----|------|---------|
-| Tasks | https://tomos-tasks.vercel.app | 3001 | Task management, subtasks, brain dump, smart surface |
 | Legal MCP | https://tomos-legal-mcp.vercel.app | 3008 | Remote MCP server — legal prompts, skills, reference resources |
 | Notes | https://tomos-notes.vercel.app | 3002 | Professional notes with smart linking, markdown rendering, templates |
 | Matters | https://tomos-matters.vercel.app | 3003 | Legal matter management |
@@ -34,7 +33,6 @@ Seven independent Next.js web apps for personal productivity, sharing a common d
 ```
 tomos-web/
 ├── apps/
-│   ├── tasks/          # @tomos/tasks — Task management
 │   ├── notes/          # @tomos/notes — Professional notes
 │   ├── matters/        # @tomos/matters — Legal matters
 │   ├── journal/        # @tomos/journal — Journal + AI companion
@@ -112,27 +110,6 @@ Each app deploys as a separate Vercel project from this monorepo. To deploy:
 
 # (Same pattern for notes and matters)
 ```
-
-## Tasks App Details
-
-### Features (Phase 2, 2026-02-26)
-- Default filter: "Active" (Inbox + In Progress, excludes Done). "All" and "Done" still available.
-- Header shows "X active / Y total" count
-- Completion circles: `w-6 h-6` with `hover:scale-110` + violet hover
-- **Subtasks**: One level deep via `parentId` self-relation on Task model
-  - TaskRow shows subtask count badge (violet pill)
-  - Task detail page: subtask list with completion toggles + quick-add input
-  - Main list filters out child tasks (`!t.parentId`)
-  - `useTask(id)` hook fetches single task with subtasks from `GET /api/task/[id]`
-  - `useCreateSubtask()` hook creates subtask via `POST /api/task` with `parentId`
-
-### Tasks Hooks (`apps/tasks/hooks/useTasks.ts`)
-- `useTasks` — all tasks from `/api/all-tasks`
-- `useTask(id)` — single task with subtasks from `/api/task/[id]`
-- `useFilteredTasks({ status, priority, search })` — client-side filtering, supports "active" filter
-- `useCreateTask` / `useBatchCreateTasks` — task creation
-- `useUpdateTask` / `useCompleteTask` — task mutations with optimistic updates
-- `useCreateSubtask` — creates subtask linked to parent
 
 ### Notes App Features (Phase 2, 2026-02-26)
 - **Markdown rendering**: `<MarkdownContent>` replaces `<pre>` tag in note detail view
@@ -287,7 +264,6 @@ All apps implement `KeyboardShortcuts.tsx` mounted in `app/layout.tsx`.
 
 | App | Shortcut | Action |
 |-----|----------|--------|
-| Tasks | `/` or `Cmd+N` | Focus quick-add |
 | Notes | `Cmd+N` | New note |
 | Matters | `Cmd+N` | New matter |
 | Journal | `Cmd+N` | New entry |
@@ -303,23 +279,22 @@ if (e.metaKey && e.altKey && e.key === "e") {
 }
 ```
 
-Tasks app: shortcut is in `QuickAdd.tsx` (handles `/`, `Cmd+N`, and `Cmd+Option+E`).
-Other apps: shortcut is in `components/KeyboardShortcuts.tsx`.
+All apps: shortcut is in `components/KeyboardShortcuts.tsx`.
 
 ## Commands
 
 ```bash
 # Development
 pnpm dev --filter=@tomos/journal   # Run journal at localhost:3004
-pnpm dev --filter=@tomos/tasks     # Run tasks at localhost:3001
 pnpm dev --filter=@tomos/fitness   # Run fitness at localhost:3005
+pnpm dev --filter=@tomos/notes     # Run notes at localhost:3002
 
 # Build
 pnpm turbo build --filter=@tomos/journal...  # Build journal + deps
 pnpm turbo build                              # Build everything
 
 # Build all apps
-pnpm turbo build --filter=@tomos/tasks... --filter=@tomos/notes... --filter=@tomos/matters...
+pnpm turbo build --filter=@tomos/notes... --filter=@tomos/matters... --filter=@tomos/journal...
 ```
 
 ## Environment
