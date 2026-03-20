@@ -145,6 +145,19 @@ importers:
         specifier: ^5
         version: 5.9.3
 
+  apps/legal-mcp:
+    dependencies:
+      next:
+        specifier: ^15
+        version: 15.5.12(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+    devDependencies:
+      '@types/node':
+        specifier: ^22
+        version: 22.19.11
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
   apps/life:
     dependencies:
       '@tanstack/react-query':
