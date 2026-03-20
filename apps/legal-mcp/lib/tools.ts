@@ -1,3 +1,5 @@
+import { PROMPTS } from "./prompts";
+
 const API = "https://tomos-task-api.vercel.app";
 
 export interface McpTool {
@@ -7,6 +9,52 @@ export interface McpTool {
 }
 
 type ToolHandler = (args: Record<string, unknown>) => Promise<unknown>;
+
+// ─── Prompt-as-Tool ───────────────────────────────────────────────────────────
+// Exposes MCP prompts as callable tools so they work in claude.ai custom connectors
+
+const PROMPT_NAMES = PROMPTS.map((p) => p.name);
+
+const PROMPT_TOOL_DEFS: { tool: McpTool; handler: ToolHandler }[] = [
+  {
+    tool: {
+      name: "use_prompt",
+      description: `Load a skill/workflow prompt by name. Returns detailed instructions for Claude to follow. Available prompts: ${PROMPT_NAMES.join(", ")}. Use this before starting any legal review, NDA triage, compliance check, or other structured workflow.`,
+      inputSchema: {
+        type: "object",
+        properties: {
+          prompt_name: {
+            type: "string",
+            description: `Prompt to load: ${PROMPT_NAMES.join(", ")}`,
+            enum: PROMPT_NAMES,
+          },
+          args: {
+            type: "object",
+            description:
+              "Arguments for the prompt. Common: contract_text, nda_text, draft_prompt, vendor_name, query, mode, platform, matter_id",
+          },
+        },
+        required: ["prompt_name"],
+      },
+    },
+    handler: async (toolArgs) => {
+      const promptName = toolArgs.prompt_name as string;
+      const promptArgs = (toolArgs.args as Record<string, string>) || {};
+      const prompt = PROMPTS.find((p) => p.name === promptName);
+      if (!prompt) {
+        return {
+          error: `Unknown prompt: ${promptName}. Available: ${PROMPT_NAMES.join(", ")}`,
+        };
+      }
+      const messages = prompt.getMessages(promptArgs);
+      return {
+        prompt_name: promptName,
+        description: prompt.description,
+        instructions: messages.map((m) => m.content.text).join("\n\n---\n\n"),
+      };
+    },
+  },
+];
 
 // ─── Read-only Tools ──────────────────────────────────────────────────────────
 
@@ -618,10 +666,12 @@ const TOOL_DEFS: { tool: McpTool; handler: ToolHandler }[] = [
 
 // ─── Exports ──────────────────────────────────────────────────────────────────
 
-export const TOOLS: McpTool[] = TOOL_DEFS.map((d) => d.tool);
+const ALL_DEFS = [...PROMPT_TOOL_DEFS, ...TOOL_DEFS];
+
+export const TOOLS: McpTool[] = ALL_DEFS.map((d) => d.tool);
 
 const handlerMap = new Map<string, ToolHandler>(
-  TOOL_DEFS.map((d) => [d.tool.name, d.handler])
+  ALL_DEFS.map((d) => [d.tool.name, d.handler])
 );
 
 export async function callTool(
