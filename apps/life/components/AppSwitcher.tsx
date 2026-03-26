@@ -3,9 +3,9 @@
 import { useState } from "react";
 
 const apps = [
-  { name: "Life", url: "https://tomos-life.vercel.app", icon: "\u{1F31F}", color: "bg-violet-100 text-violet-700" },
+  { name: "Life", url: "/", icon: "\uD83C\uDF1F", color: "bg-brand-100 text-brand-700", current: true },
   { name: "Matters", url: "https://tomos-matters.vercel.app", icon: "\u2696", color: "bg-amber-100 text-amber-700" },
-  { name: "Fitness", url: "/", icon: "\uD83C\uDFCB", color: "bg-brand-100 text-brand-700", current: true },
+  { name: "Fitness", url: "https://tomos-fitness.vercel.app", icon: "\uD83C\uDFCB", color: "bg-emerald-100 text-emerald-700" },
 ];
 
 export function AppSwitcher() {

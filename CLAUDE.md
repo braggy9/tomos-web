@@ -2,7 +2,7 @@
 
 ## What This Repo Is
 
-Six independent Next.js web apps for personal productivity, sharing a common design system and API client. Each app does one thing well, replacing the bloated TomOS Swift monolith. **This is the primary client for TomOS. Swift native apps are deprecated. Tasks migrated to Todoist.**
+Independent Next.js web apps for personal productivity, sharing a common design system and API client. Each app does one thing well, replacing the bloated TomOS Swift monolith. **This is the primary client for TomOS. Swift native apps are deprecated. Tasks migrated to Todoist. Notes/Journal/Legal PWAs decommissioned 2026-03-26 — APIs and DB tables retained.**
 
 **Monorepo:** pnpm workspaces + Turborepo
 **Framework:** Next.js 15 (App Router)
@@ -21,29 +21,27 @@ Six independent Next.js web apps for personal productivity, sharing a common des
 | App | URL | Port | Purpose |
 |-----|-----|------|---------|
 | Legal MCP | https://tomos-legal-mcp.vercel.app | 3008 | Remote MCP server — legal prompts, skills, reference resources |
-| Notes | https://tomos-notes.vercel.app | 3002 | Professional notes with smart linking, markdown rendering, templates |
 | Matters | https://tomos-matters.vercel.app | 3003 | Legal matter management |
-| Journal | https://tomos-journal.vercel.app | 3004 | Reflective journaling with AI companion |
 | Fitness | https://tomos-fitness.vercel.app | 3005 | Gym session logging, recovery check-ins, progressive overload |
-| Legal | https://tomos-legal.vercel.app | 3006 | Legal dashboard, clause library browser, contract review history |
 | Life | https://tomos-life.vercel.app | 3007 | Goals, habits, shopping list, weekly planning |
+| Dashboard | https://tomos-dashboard.vercel.app | 3001 | Command Tower — journal insights, matters overview |
+
+**Decommissioned (API/DB retained):** Tasks (→ Todoist), Notes (→ Notion/MCP), Journal frontend (API still active), Legal frontend (→ Claude skills)
 
 ## Structure
 
 ```
 tomos-web/
 ├── apps/
-│   ├── notes/          # @tomos/notes — Professional notes
 │   ├── matters/        # @tomos/matters — Legal matters
-│   ├── journal/        # @tomos/journal — Journal + AI companion
 │   ├── fitness/        # @tomos/fitness — Gym session logging + recovery
-│   ├── legal/          # @tomos/legal — Legal dashboard + clause library
-│   └── life/           # @tomos/life — Goals, habits, shopping, weekly plans
+│   ├── life/           # @tomos/life — Goals, habits, shopping, weekly plans
+│   ├── dashboard/      # @tomos/dashboard — Command Tower
+│   └── legal-mcp/      # @tomos/legal-mcp — Remote MCP server (legal skills)
 ├── packages/
 │   ├── api/            # @tomos/api — Shared API client + types
 │   ├── ui/             # @tomos/ui — Shared React components
 │   └── config/         # @tomos/config — Shared Tailwind/TS configs
-│   └── legal-mcp/      # @tomos/legal-mcp — Remote MCP server (legal skills)
 ├── turbo.json
 ├── pnpm-workspace.yaml
 └── vercel.json         # Switched per-app for deployment

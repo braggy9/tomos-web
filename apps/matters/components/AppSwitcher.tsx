@@ -2,10 +2,9 @@
 import { useState, useRef, useEffect } from "react";
 
 const apps = [
-  { name: "Tasks", url: "https://tomos-tasks.vercel.app", icon: "\u2713", color: "bg-violet-100 text-violet-700", current: false },
-  { name: "Notes", url: "https://tomos-notes.vercel.app", icon: "\u270E", color: "bg-blue-100 text-blue-700", current: false },
+  { name: "Life", url: "https://tomos-life.vercel.app", icon: "\u{1F31F}", color: "bg-violet-100 text-violet-700" },
   { name: "Matters", url: "https://tomos-matters.vercel.app", icon: "\u2696", color: "bg-amber-100 text-amber-700", current: true },
-  { name: "Journal", url: "https://tomos-journal.vercel.app", icon: "\uD83D\uDCD6", color: "bg-green-100 text-green-700", current: false },
+  { name: "Fitness", url: "https://tomos-fitness.vercel.app", icon: "\uD83C\uDFCB", color: "bg-emerald-100 text-emerald-700" },
 ];
 
 export function AppSwitcher() {
