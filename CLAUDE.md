@@ -1,300 +1,43 @@
-# TomOS Web Apps (Monorepo)
+# CLAUDE.md — tomos-web
 
 ## What This Repo Is
 
-Independent Next.js web apps for personal productivity, sharing a common design system and API client. Each app does one thing well, replacing the bloated TomOS Swift monolith. **This is the primary client for TomOS. Swift native apps are deprecated. Tasks migrated to Todoist. Notes/Journal/Legal PWAs decommissioned 2026-03-26 — APIs and DB tables retained.**
+TomOS web monorepo. Contains the surviving apps after PWA triage:
+- `apps/dashboard/` — Command Tower (daily dashboard, deployed to Lovable)
+- `apps/fitness/` — Fitness PWA (assess later)
+- `apps/legal-mcp/` — TomOS MCP server (rename to `apps/mcp/` pending)
 
-**Monorepo:** pnpm workspaces + Turborepo
-**Framework:** Next.js 15 (App Router)
-**Styling:** Tailwind CSS v4
-**Data Fetching:** TanStack Query v5
-**Backend:** `https://tomos-task-api.vercel.app` (Prisma + Neon Postgres)
+**Owner:** Tom Bragg (@braggy9)
+**Related repos:** braggy9/tomos-command-tower (skills + RULES.md), braggy9/TomOS (API backend), braggy9/mcp-bridges (bridges)
 
-## Repository Info
+## Mandatory Rules
 
-**Local Path:** `/Users/tombragg/Desktop/Projects/tomos-web/`
-**Backend Repo:** `/Users/tombragg/Desktop/Projects/TomOS/`
-**Deprecated Native Apps:** `/Users/tombragg/Desktop/🖥️ TomOS/TomOS-Apps/` (Swift, no longer developed)
+**Read RULES.md in the tomos-command-tower repo before doing anything.** Cross-project rules on uncertainty, anti-flattening, correction propagation, and trust recovery apply here. Key points:
 
-## Apps
+- **Uncertainty:** "Deployed to Vercel" ≠ "working." Verify endpoints return expected data before claiming something works.
+- **Anti-flattening:** Don't remove code without understanding what depends on it. Dead PWA frontends were killed deliberately — their API routes were kept deliberately.
+- **Correction propagation:** Carry fixes across the whole monorepo, not just one app.
+- **No process theatre:** Execute, then explain.
 
-| App | URL | Port | Purpose |
-|-----|-----|------|---------|
-| Legal MCP | https://tomos-legal-mcp.vercel.app | 3008 | Remote MCP server — legal prompts, skills, reference resources |
-| Matters | https://tomos-matters.vercel.app | 3003 | Legal matter management |
-| Fitness | https://tomos-fitness.vercel.app | 3005 | Gym session logging, recovery check-ins, progressive overload |
-| Life | https://tomos-life.vercel.app | 3007 | Goals, habits, shopping list, weekly planning |
-| Dashboard | https://tomos-dashboard.vercel.app | 3001 | Command Tower — journal insights, matters overview |
+Full rules: https://github.com/braggy9/tomos-command-tower/blob/main/RULES.md
 
-**Decommissioned (API/DB retained):** Tasks (→ Todoist), Notes (→ Notion/MCP), Journal frontend (API still active), Legal frontend (→ Claude skills)
+## Key Technical Context
 
-## Structure
+- **Stack:** Next.js 15, TanStack Query v5, Tailwind CSS v4
+- **MCP server:** `apps/legal-mcp/`, endpoint `tomos-mcp.vercel.app/mcp` (30 tools, 19 resources, 16 prompts)
+- **Command Tower:** Rebuilt in Lovable at `tomos-commandtower.lovable.app`. GitHub sync for portability.
+- **Dead apps (removed):** Notes, Legal, Tasks, Journal frontends. Matters + Life frontend removal prepped but not executed.
+- **API routes retained:** All backend routes for matters, journal, training, life still live in the monorepo. Do not remove.
 
-```
-tomos-web/
-├── apps/
-│   ├── matters/        # @tomos/matters — Legal matters
-│   ├── fitness/        # @tomos/fitness — Gym session logging + recovery
-│   ├── life/           # @tomos/life — Goals, habits, shopping, weekly plans
-│   ├── dashboard/      # @tomos/dashboard — Command Tower
-│   └── legal-mcp/      # @tomos/legal-mcp — Remote MCP server (legal skills)
-├── packages/
-│   ├── api/            # @tomos/api — Shared API client + types
-│   ├── ui/             # @tomos/ui — Shared React components
-│   └── config/         # @tomos/config — Shared Tailwind/TS configs
-├── turbo.json
-├── pnpm-workspace.yaml
-└── vercel.json         # Switched per-app for deployment
-```
+## Known Issues
 
-## Shared Packages
+- Command Tower: `RangeError: Invalid time value` crash from Todoist recurring task date strings
+- Command Tower: Todoist filter showing all tasks instead of `(today | overdue) & (p1 | p2)`
+- `apps/legal-mcp/` rename to `apps/mcp/` pending
 
-### @tomos/api (`packages/api/`)
-- `src/client.ts` — Base fetch client (base URL, error handling)
-- `src/types.ts` — All TypeScript interfaces
-- `src/tasks.ts` — Task API functions
-- `src/notes.ts` — Notes API functions
-- `src/matters.ts` — Matters API functions
-- `src/journal.ts` — Journal API functions (entries, chat, insights, search, summaries)
-- `src/fitness.ts` — Fitness API functions (sessions, exercises, suggestions, recovery, running)
-- `src/index.ts` — Re-exports all modules
+## Conventions
 
-### @tomos/ui (`packages/ui/`)
-- Badge, Button, Card, Input, EmptyState, Spinner, Toast, MarkdownContent
-- `MarkdownContent` — shared markdown renderer (react-markdown + remark-gfm). Used in Notes + Journal detail pages. Styled via `components` prop (no @tailwindcss/typography needed). Supports headers, bold, italic, code blocks, tables, task lists, blockquotes, links.
-- Toast API: `const toast = useToast().toast;` then `toast("message")` or `toast("message", "error")`
-- Brand color: violet-600 (`#7C3AED`)
-
-## Design System
-
-```
-Brand: Purple primary (violet-600 / #7C3AED)
-Spacing: 4pt grid (Tailwind default)
-Radius: sm=4, md=8, lg=12, xl=16
-Priority: urgent=red, high=orange, medium=blue, low=gray
-Status: active=blue, completed=green, on_hold=amber, archived=gray
-```
-
-Tailwind v4 uses `@theme` blocks with `brand-*` color tokens (violet palette).
-
-## Common Patterns
-
-### Cross-App Navigation
-- Each app has an `AppSwitcher` component (dropdown in header)
-- Desktop sidebar has "TomOS Apps" links section
-- URLs are hardcoded Vercel deployment URLs
-
-### Data Fetching
-- TanStack Query v5 with `queryKey` namespacing per feature
-- Optimistic updates on mutations
-- Fire-and-forget for background operations
-
-### Deployment (Vercel)
-Each app deploys as a separate Vercel project from this monorepo. To deploy:
-1. Update `vercel.json` buildCommand and outputDirectory for the target app
-2. Run `vercel link --project <project-name> --yes`
-3. Run `vercel --prod --yes`
-4. Restore `vercel.json` to tasks default
-
-**Quick deploy all:**
-```bash
-# Deploy journal
-# 1. Edit vercel.json: filter=@tomos/journal, output=apps/journal/.next
-# 2. vercel link --project tomos-journal --yes && vercel --prod --yes
-
-# Deploy tasks
-# 1. Edit vercel.json: filter=@tomos/tasks, output=apps/tasks/.next
-# 2. vercel link --project tomos-tasks --yes && vercel --prod --yes
-
-# (Same pattern for notes and matters)
-```
-
-### Notes App Features (Phase 2, 2026-02-26)
-- **Markdown rendering**: `<MarkdownContent>` replaces `<pre>` tag in note detail view
-- **SyntaxHelp**: Toggleable panel in new note + edit mode showing smart linking syntax
-- **Clickable links**: Linked items section links to Tasks/Matters/Notes apps (external URLs)
-- **Smart linking syntax**: `@task`, `@"task name"`, `#PUB-2026-001`, `#"Matter"`, `#keyword`, `&project`, `[[note]]`
-
-### Notes Components (`apps/notes/components/`)
-- `SyntaxHelp.tsx` — Collapsible panel showing smart linking syntax reference
-
-## Journal App Details
-
-### Features
-- Entry list with inline search and mood filter chips
-- New entry page with localStorage auto-save (2s debounce, 24h expiry)
-- Entry detail with full markdown rendering via shared `<MarkdownContent>` (was custom renderContent(), now supports full GFM)
-- AI reflection generation (Claude Sonnet via backend)
-- Companion chat with conversation history
-- Insights dashboard (streak, mood distribution, theme cloud, mood timeline)
-- Weekly/monthly AI summary generation
-
-### Journal Hooks (`apps/journal/hooks/`)
-- `useJournal.ts` — useEntries, useEntry, useCreateEntry, useUpdateEntry, useDeleteEntry, useGenerateReflection
-- `useChat.ts` — useConversations, useConversation, useSendMessage
-- `useInsights.ts` — useInsights, useSummaries, useGenerateSummary
-- `useSearch.ts` — useJournalSearch (enabled when query >= 2 chars)
-
-### Journal Components (`apps/journal/components/`)
-- `BottomNav.tsx` — 4 tabs (Entries, Write, Chat, Insights) + desktop sidebar
-- `AppSwitcher.tsx` — Cross-app dropdown navigation
-- `EntryRow.tsx` — Entry card with mood emoji, energy badge, themes
-- `MoodPicker.tsx` — Mood (5 emojis) + energy (3 chips) selector
-
-## Fitness App Details
-
-### Features (Enhanced 2026-03-05)
-- **Smart Home Screen**: Auto-selects Run tab when Strava activity exists today, Gym tab otherwise. Run | Gym tab pills.
-- **Run Logging (RunLogPanel)**: Auto-populated from Strava (distance, duration, pace, HR, elevation, splits), HR zone distribution bar. Subjective logging: RPE 1-10 pills, session type override, mood post 1-5 emojis, notes.
-- **Gym Logging (GymLogPanel)**: Extracted from original page. Smart suggestion + per-set logging + mood post emojis.
-- **Weekly Dashboard**: Running card (totalKm, sessions, avgPace, longest), gym card (sessions, avgRPE, totalSets), ACWR training load bar chart, recovery trend, plan compliance progress bar.
-- **History**: Gym/Running/All filter toggle. Running rows link to `/history/run/[id]` detail pages.
-- **Activity Detail**: Stats grid, per-km splits table, HR zone distribution, on-demand Strava streams loading.
-- **Settings**: Max/resting HR inputs, auto-calculated HR zones (Z1-Z5), default week type, Strava re-auth, Garmin "coming soon".
-- **Recovery**: 3-tap daily check-in (sleep/energy/soreness), auto-attached to sessions.
-
-### Architecture
-- Running-first with gym support. Smart tab switching based on daily Strava activity.
-- Push-first ADHD design: morning APNs push tells you what to do + weights
-- Progressive overload engine: weight suggestions based on RPE trends, running load, kid-week status
-- 3 session templates: A (Strength+Power), B (Upper+Core), C (CrossFit/Metcon)
-- HR zone calculation: `lib/fitness/hr-zones.ts` — 5 zones based on maxHR percentage
-- Strava streams: on-demand fetch with 24h cache in `streamsCache` JSONB field
-- RunSession auto-attaches today's RecoveryCheckIn via `recoveryId`
-- Backend cron endpoint: `POST /api/cron/gym-suggestion` (CRON_SECRET Bearer auth)
-
-### Fitness Hooks (`apps/fitness/hooks/`)
-- `useFitness.ts` — useSuggestion, useSessions, useSession, useQuickLog, useExercises, useRunningStats
-- `useRecovery.ts` — useRecoveryCheckins, useSubmitRecovery
-- `useRunning.ts` — useTodayRun, useRunningActivities, useRunningActivity, useActivityStreams, useCreateRunSession, useHRZones, useManualSync
-- `useSettings.ts` — useSettings, useUpdateSettings
-- `useDashboard.ts` — useWeeklyDashboard
-
-### Fitness Components (`apps/fitness/components/`)
-- `RunLogPanel.tsx` — Auto-populated run data + subjective logging form. Exports `NoRunPanel` for no-run state.
-- `GymLogPanel.tsx` — Extracted gym logger with mood post addition.
-- `BottomNav.tsx` — 6 tabs: Today, Plan, History, Dashboard, Races, Recovery. Desktop sidebar with Settings + cross-app links.
-- `RaceCalendarOverlay.tsx` — Month-by-month timeline with custody-coloured week rows, road/trail race chips, status dots, logistics flags.
-- `RaceDetailCard.tsx` — Drill-down card with checklists, status badges, Milo care, cost summary, days-out countdown.
-- `CostTracker.tsx` — Season cost summary with category breakdown + per-race table.
-
-### Race Operations (`/races` route, added 2026-03-19)
-- **Calendar view (default):** Month-by-month timeline showing all custody weeks. Race chips overlaid on relevant weeks with colour-coding (road=blue, trail=teal). Status dots (green/amber/red). Logistics flags (childcare, accom, travel, Milo). Current week highlighted with red left-border.
-- **Costs view:** Season summary card (paid/estimated/projected) + per-race cost table.
-- **Race detail:** Tap any race chip → drill-down with checklists from Notion, status badges, days-out countdown, cost breakdown.
-- **Data source:** `GET /api/training/race-logistics` (Notion + Postgres costs), `GET /api/training/parenting-schedule` (Notion custody weeks). 15-min cache with `?refresh=true` bust.
-- **Notion integration:** Parses Race Logistics 2026 page + Training Hub parenting schedule. Falls back to hardcoded 2026 season data if Notion unavailable. Requires pages shared with Notion integration.
-- **Hooks:** `useRaces.ts` — `useRaceLogistics()`, `useParentingSchedule()`, `useRefreshRaceData()`, `useUpdateRaceCosts()`
-
-### Backend Endpoints (26 routes under `/api/gym/`)
-**Original:**
-- `GET/POST /api/gym/exercises` — Exercise CRUD (24 seeded)
-- `GET /api/gym/exercises/[id]` — Single exercise + history
-- `GET/POST /api/gym/sessions` — Session CRUD with nested exercises/sets
-- `GET/PATCH/DELETE /api/gym/sessions/[id]` — Session management
-- `POST /api/gym/log` — Quick log (resolves exercise names, now includes moodPost + auto-recoveryId)
-- `GET /api/gym/suggest?weekType=kid|non-kid` — Smart session + weight suggestions
-- `GET/POST /api/gym/recovery` — Recovery check-ins
-- `GET /api/gym/running/stats` — 7d/30d running aggregates
-- `GET/POST /api/gym/sync/strava` — Webhook (enriched: splits, maxHR, cadence, calories, description)
-- `POST /api/gym/sync/strava/manual` — 30-day backfill (now fetches individual activity details)
-- `GET /api/gym/sync/strava/auth` — OAuth redirect
-- `GET /api/gym/sync/strava/callback` — Token exchange
-
-**Added 2026-03-05:**
-- `GET/PATCH /api/gym/settings` — UserSettings singleton (maxHR, restingHR, weekType)
-- `GET /api/gym/running/activities` — List with RunSession, pagination, `?days=` filter
-- `GET /api/gym/running/activities/[id]` — Detail + splits + HR zones
-- `GET /api/gym/running/activities/[id]/streams` — On-demand Strava streams (24h cache)
-- `POST /api/gym/running/sessions` — Create/update RunSession (auto-attaches RecoveryCheckIn)
-- `GET /api/gym/running/today` — Check for Strava run today (Sydney TZ)
-- `GET /api/gym/running/zones` — HR zones from settings, optional `?activityId=` for zone time
-- `GET /api/gym/dashboard/weekly` — Weekly aggregates (running, gym, ACWR, recovery, compliance)
-- `GET /api/gym/sync/garmin/auth` — Stub (501)
-- `GET /api/gym/sync/garmin/callback` — Stub (501)
-- `POST /api/gym/sync/garmin` — Webhook stub (501)
-- `GET /api/gym/sync/garmin/workouts` — Stub (empty array)
-
-### Known Issues (as of 2026-03-05)
-- **Strava tokens need re-auth** — visit `/api/gym/sync/strava/auth`
-- **Garmin is stubs-only** — all endpoints return 501 "Garmin Connect not configured yet"
-- **Cron scheduled** — `POST /api/cron/gym-suggestion` runs via GitHub Actions at 6:30am Sydney daily
-
-## Life App Details
-
-### Features
-- **Today tab**: Aggregated daily dashboard — habits checklist, weekly priorities, shopping count, open tasks, journal mood, training prescription. Single API call to `/api/life/today`.
-- **Plan tab**: Weekly plan editor — energy level (1-5), kid week toggle, priorities with category badges, daily focus intentions per day of week.
-- **Habits tab**: Active habits with streak display (flame emoji at 7+ days), tap-to-complete, progress bar, create new habits with frequency/icon/category.
-- **Shop tab**: Shopping list grouped by category (produce, dairy, meat, pantry, household, other). Quick add with plain or AI parse mode. Check-off items, clear checked.
-- **Goals tab**: Goal cards with progress bars (quick 0/25/50/75/100% buttons), category badges, timeframe labels, linked habits, sub-goals display.
-
-### Architecture
-- Mobile-first PWA with violet-600 brand colour
-- 5-tab BottomNav (Today, Plan, Habits, Shop, Goals) + desktop sidebar with cross-app links
-- All data from `/api/life/*` endpoints on TomOS backend
-- No AI in PWA — AI lives in Claude skills
-
-### Hooks (`apps/life/hooks/`)
-- `useLifeToday.ts` — calls `/api/life/today` for aggregated snapshot
-- `useGoals.ts` — CRUD for goals (list, get, create, update, delete)
-- `useHabits.ts` — CRUD + check-in + log for habits
-- `useShopping.ts` — CRUD + check + clear + NLP parse for shopping
-- `usePlans.ts` — weekly plan CRUD + current week auto-create
-
-### Components (`apps/life/components/`)
-- `BottomNav.tsx` — 5 tabs + desktop sidebar with cross-app links
-- `HabitRow.tsx` — habit with completion circle, icon, streak badge
-- `ShoppingItemRow.tsx` — item with check circle, quantity, hover-delete
-- `PriorityCard.tsx` — priority with category colour badge
-
-### Backend Endpoints (under `/api/life/`)
-- Goals: `GET/POST /api/life/goals`, `GET/PATCH/DELETE /api/life/goals/[id]`
-- Habits: `GET/POST /api/life/habits`, `GET/PATCH/DELETE /api/life/habits/[id]`, `POST /api/life/habits/[id]/log`
-- Habits check-in: `GET/POST /api/life/habits/check-in`
-- Shopping: `GET/POST /api/life/shopping`, `PATCH/DELETE /api/life/shopping/[id]`, `POST /api/life/shopping/check`, `POST /api/life/shopping/clear`, `POST /api/life/shopping/parse`
-- Plans: `GET/POST /api/life/plans`, `GET /api/life/plans/current`, `PATCH /api/life/plans/[id]`
-- Dashboard: `GET /api/life/today` (aggregated snapshot from habits, shopping, plans, tasks, journal, training)
-
-## Keyboard Shortcuts
-
-All apps implement `KeyboardShortcuts.tsx` mounted in `app/layout.tsx`.
-
-| App | Shortcut | Action |
-|-----|----------|--------|
-| Notes | `Cmd+N` | New note |
-| Matters | `Cmd+N` | New matter |
-| Journal | `Cmd+N` | New entry |
-| Fitness | `Cmd+N` | New session log |
-| Life | `Cmd+N` | Go to habits page |
-| All apps | `Cmd+Option+E` | Open `mailto:tasks@tomos.run` in default email client |
-
-**Cmd+Option+E pattern** (in KeyboardShortcuts.tsx):
-```typescript
-if (e.metaKey && e.altKey && e.key === "e") {
-  e.preventDefault();
-  window.location.href = "mailto:tasks@tomos.run";
-}
-```
-
-All apps: shortcut is in `components/KeyboardShortcuts.tsx`.
-
-## Commands
-
-```bash
-# Development
-pnpm dev --filter=@tomos/journal   # Run journal at localhost:3004
-pnpm dev --filter=@tomos/fitness   # Run fitness at localhost:3005
-pnpm dev --filter=@tomos/notes     # Run notes at localhost:3002
-
-# Build
-pnpm turbo build --filter=@tomos/journal...  # Build journal + deps
-pnpm turbo build                              # Build everything
-
-# Build all apps
-pnpm turbo build --filter=@tomos/notes... --filter=@tomos/matters... --filter=@tomos/journal...
-```
-
-## Environment
-
-No `.env.local` needed — all apps call the public backend API at `https://tomos-task-api.vercel.app`. No authentication required (personal tools).
+- Australian English
+- Conventional commits
+- No placeholder content
+- Verify endpoint responses before marking working
