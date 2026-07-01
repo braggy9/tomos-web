@@ -80,6 +80,7 @@ export function Card({
         borderRadius: 10,
         padding: 16,
         border: `1px solid ${COLORS.border}`,
+        minWidth: 0,
         ...style,
       }}
     >

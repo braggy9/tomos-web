@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
+import {
+  fetchCalendarEvents,
+  getAccessToken,
+  getCalendarConfig,
+} from "../../../../lib/googleCalendar";
 
 // Google Calendar API via Service Account (GOOGLE_SERVICE_ACCOUNT env var)
 // Tom must share his calendar with the service account email
-
-interface ServiceAccount {
-  client_email: string;
-  private_key: string;
-  token_uri: string;
-}
 
 interface CalendarEvent {
   id: string;
@@ -20,69 +18,15 @@ interface CalendarEvent {
   status: "past" | "current" | "future";
 }
 
-function base64url(data: string | Buffer): string {
-  const buf = typeof data === "string" ? Buffer.from(data) : data;
-  return buf.toString("base64url");
-}
-
-async function getAccessToken(sa: ServiceAccount): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-  const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-  const payload = base64url(
-    JSON.stringify({
-      iss: sa.client_email,
-      scope: "https://www.googleapis.com/auth/calendar.readonly",
-      aud: sa.token_uri,
-      iat: now,
-      exp: now + 3600,
-    })
-  );
-
-  const signInput = `${header}.${payload}`;
-  const sign = crypto.createSign("RSA-SHA256");
-  sign.update(signInput);
-  const signature = sign.sign(sa.private_key, "base64url");
-
-  const jwt = `${signInput}.${signature}`;
-
-  const res = await fetch(sa.token_uri, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwt,
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    console.error("Service account token error:", err);
-    throw new Error(`Token exchange failed: ${res.status}`);
-  }
-
-  const data = await res.json();
-  return data.access_token;
-}
-
 export async function GET() {
-  const saRaw = process.env.GOOGLE_SERVICE_ACCOUNT;
-  if (!saRaw) {
+  const config = getCalendarConfig();
+  if (!config.configured) {
     return NextResponse.json({ events: [], configured: false }, { status: 200 });
   }
-
-  let sa: ServiceAccount;
-  try {
-    sa = JSON.parse(saRaw);
-  } catch {
-    console.error("Failed to parse GOOGLE_SERVICE_ACCOUNT JSON");
-    return NextResponse.json({ events: [], configured: false }, { status: 200 });
-  }
-
-  const calendarId = (process.env.GOOGLE_CALENDAR_ID || "tom.bragg9@gmail.com").trim();
 
   let accessToken: string;
   try {
-    accessToken = await getAccessToken(sa);
+    accessToken = await getAccessToken(config.serviceAccount);
   } catch (err) {
     console.error("Failed to get access token:", err);
     return NextResponse.json({ events: [], configured: true, error: "auth_failed" }, { status: 200 });
@@ -110,30 +54,13 @@ export async function GET() {
   const timeMax = `${sydDate}T23:59:59${offsetStr}`;
 
   try {
-    const url = new URL(
-      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`
-    );
-    url.searchParams.set("timeMin", timeMin);
-    url.searchParams.set("timeMax", timeMax);
-    url.searchParams.set("singleEvents", "true");
-    url.searchParams.set("orderBy", "startTime");
-    url.searchParams.set("timeZone", "Australia/Sydney");
-
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${accessToken}` },
+    const items = await fetchCalendarEvents({
+      accessToken,
+      calendarId: config.calendarId,
+      timeMin,
+      timeMax,
     });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("Google Calendar API error:", res.status, errText);
-      return NextResponse.json(
-        { events: [], configured: true, error: `api_${res.status}` },
-        { status: 200 }
-      );
-    }
-
-    const data = await res.json();
-    const events: CalendarEvent[] = (data.items || []).map(
+    const events: CalendarEvent[] = items.map(
       (item: {
         id: string;
         summary?: string;
