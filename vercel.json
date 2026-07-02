@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
-  "buildCommand": "pnpm turbo build --filter=@tomos/notes...",
-  "outputDirectory": "apps/notes/.next",
+  "buildCommand": "pnpm turbo build --filter=@tomos/dashboard...",
+  "outputDirectory": "apps/dashboard/.next",
   "installCommand": "pnpm install"
 }

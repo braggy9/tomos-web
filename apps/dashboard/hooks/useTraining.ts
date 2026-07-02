@@ -75,6 +75,55 @@ export interface RunningStats {
   };
 }
 
+export interface TrainingRadar {
+  generatedAt: string;
+  calendar: {
+    configured: boolean;
+    error: string | null;
+    lookbackDays: number;
+    strengthAuditDays: number;
+    plannedColorId: string;
+    doneColorId: string;
+    inspectedEvents: number;
+    slippedSessions: {
+      id: string;
+      title: string;
+      sessionType: string;
+      start: string;
+      daysOverdue: number;
+      colorId: string | null;
+      sourceUrl: string | null;
+    }[];
+  };
+  raceRadar: {
+    windowDays: number;
+    nextRace: {
+      id: string;
+      name: string;
+      date: string;
+      distance: string | null;
+      daysUntil: number;
+      entryStatus: string;
+    } | null;
+    unconfirmedRaces: {
+      id: string;
+      name: string;
+      date: string;
+      distance: string | null;
+      daysUntil: number;
+      entryStatus: string;
+      logisticsStatus: string | null;
+    }[];
+  };
+  recoveryCrossCheck: {
+    recovery: RecoveryData | null;
+    strava: {
+      activities: RunActivity[];
+      last7Days: RunningStats["last7Days"] | null;
+    };
+  };
+}
+
 // ─── Fetchers ───────────────────────────────────────────────
 
 async function fetchTrainingToday(): Promise<TrainingToday> {
@@ -110,6 +159,12 @@ async function fetchRunningStats(): Promise<RunningStats | null> {
   if (!res.ok) return null;
   const json = await res.json();
   return json.data || json;
+}
+
+async function fetchTrainingRadar(): Promise<TrainingRadar> {
+  const res = await fetch("/api/training-radar");
+  if (!res.ok) throw new Error("Failed to fetch training radar");
+  return res.json();
 }
 
 // ─── Hooks ──────────────────────────────────────────────────
@@ -151,5 +206,14 @@ export function useRunningStats() {
     queryKey: ["running-stats"],
     queryFn: fetchRunningStats,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useTrainingRadar() {
+  return useQuery({
+    queryKey: ["training-radar"],
+    queryFn: fetchTrainingRadar,
+    staleTime: 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
   });
 }

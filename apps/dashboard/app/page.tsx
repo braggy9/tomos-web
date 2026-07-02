@@ -7,6 +7,7 @@ import { QuickActions } from "../components/QuickActions";
 import { TasksPanel } from "../components/TasksPanel";
 import { MattersPanel } from "../components/MattersPanel";
 import { TrainingPanel } from "../components/TrainingPanel";
+import { TrainingRadarPanel } from "../components/TrainingRadarPanel";
 import { JournalPanel } from "../components/JournalPanel";
 import { CalendarPanel } from "../components/CalendarPanel";
 import { COLORS } from "../components/ui";
@@ -72,6 +73,7 @@ export default function DashboardPage() {
       <QuickActions />
 
       <div className="dashboard-grid">
+        <TrainingRadarPanel />
         <TasksPanel />
         <MattersPanel />
         <CalendarPanel />
