@@ -1,12 +1,12 @@
 {
-  "name": "Command Tower",
-  "short_name": "Tower",
-  "description": "TomOS Command Tower Dashboard",
+  "name": "Training Radar",
+  "short_name": "Radar",
+  "description": "TomOS Training Radar",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0f1117",
-  "theme_color": "#0f1117",
+  "background_color": "#f7f5f0",
+  "theme_color": "#f7f5f0",
   "icons": [
     {
       "src": "/icon-192.png",
