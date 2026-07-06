@@ -16,13 +16,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Command Tower",
-  description: "TomOS Command Tower Dashboard",
+  title: "Training Radar",
+  description: "TomOS Training Radar",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
-    title: "Command Tower",
+    statusBarStyle: "default",
+    title: "Training Radar",
   },
   icons: {
     icon: "/icon.svg",
@@ -34,7 +34,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#0f1117",
+  themeColor: "#f7f5f0",
 };
 
 export default function RootLayout({
