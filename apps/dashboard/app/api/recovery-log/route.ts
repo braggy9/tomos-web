@@ -34,6 +34,8 @@ function jsonError(reason: string, status: number) {
 function parseScores(scores: unknown): number[] | null {
   if (typeof scores !== "string") return null;
 
+  if (/[+-]\d/.test(scores)) return null;
+
   const values = scores
     .trim()
     .split(/\D+/)
