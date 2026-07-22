@@ -93,6 +93,14 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
   const stravaWeek = data.recoveryCrossCheck.strava.last7Days;
   const recoveryDays = recoveryAgeDays(recovery?.date);
   const recoveryState = recoveryLabel(recoveryDays);
+  const recoveryIsStale = recoveryDays === null || recoveryDays > 3;
+  const recoveryNote = recoveryIsStale
+    ? recoveryDays === null
+      ? "no check-in logged"
+      : `last check-in ${recoveryDays}d ago`
+    : recovery?.readinessScore
+      ? `readiness ${recovery.readinessScore}/5`
+      : "no score logged";
 
   const tiles = useMemo<Tile[]>(
     () => [
@@ -121,8 +129,8 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
         key: "recovery",
         label: "Recovery",
         value: recoveryState,
-        note: recovery?.readinessScore ? `readiness ${recovery.readinessScore}/5` : "no score logged",
-        tone: recoveryDays === null || recoveryDays > 3 ? "attention" : "clear",
+        note: recoveryNote,
+        tone: recoveryIsStale ? "attention" : "clear",
         expandable: true,
       },
       {
@@ -134,7 +142,7 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
         expandable: true,
       },
     ],
-    [data, raceGaps.length, recovery?.readinessScore, recoveryDays, recoveryState, slipped, stravaWeek]
+    [data, raceGaps.length, recoveryIsStale, recoveryNote, recoveryState, slipped, stravaWeek]
   );
 
   const [selected, setSelected] = useState<TileKey | null>(null);
@@ -219,9 +227,11 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
               <span>
                 <strong>{recovery ? `Last check-in ${formatDate(recovery.date)}` : "No recovery check-in"}</strong>
                 <small>
-                  {recovery
+                  {recovery && !recoveryIsStale
                     ? `Sleep ${recovery.sleepQuality}/5 · energy ${recovery.energy}/5 · soreness ${recovery.soreness}/5`
-                    : "Recovery is useful context for interpreting slippage."}
+                    : recovery
+                      ? "This check-in is stale; log a new recovery check-in before using its scores."
+                      : "Recovery is useful context for interpreting slippage."}
                 </small>
               </span>
               <b>{recoveryState}</b>
