@@ -17,7 +17,8 @@ Training Radar answers four narrow questions:
 4. Is Strava sync healthy, and what training actually happened this week?
 
 It is a read-only surface. It does not edit Calendar, race, recovery, or Strava
-data and it does not send notifications.
+data. A TomOS backend cron reads the protected JSON endpoint each morning and
+sends an APNs alert only when a source is unavailable or an item needs attention.
 
 ## Data Flow
 
@@ -28,6 +29,10 @@ data and it does not send notifications.
 | Recovery | TomOS API `/api/training/recovery` | Shows the latest check-in; older than 3 days is stale |
 | Actual running | TomOS API running activity and stats routes | Shows the current seven-day totals and recent activities |
 | Strava health | TomOS API `/api/gym/sync/strava/status` | Shows the last successful sync and its current/stale state |
+
+Every TomOS training read uses `TOMOS_TRAINING_READ_TOKEN` in a server-side
+Bearer header. Source failures are returned as explicit health states; they are
+never converted into zero counts or a clear status.
 
 The TomOS API origin is currently `https://tomos-task-api.vercel.app` and is
 defined in `lib/trainingRadar.ts`.
@@ -41,11 +46,15 @@ defined in `lib/trainingRadar.ts`.
 - An event must have passed and contain a recognised training marker such as
   Greta, strength, Car Park, Pilates, easy, tempo, intervals, hills, or a
   training emoji.
-- Results are sorted oldest first and the first six open items are displayed.
-- A run-like Calendar item is removed from the slipped list when Strava contains
-  a run on the same Australia/Sydney calendar date.
+- Results are sorted oldest first. Counts cover every matching item; the first
+  six are displayed.
+- Calendar training events with a passed date but neither planned nor done
+  colour are surfaced as `status unclear` for manual review.
+- A run-only Calendar item is removed from the slipped list only when an unused
+  same-day Strava activity also matches the planned run type and any distance
+  stated in the Calendar title.
 - Strava reconciliation applies only to run, tempo, intervals, long-run, and
-  hill sessions. It never clears strength or recovery sessions.
+  hill sessions. It never clears strength, recovery, or mixed sessions.
 
 The colour rule is a verified Tom-side convention, not a Google Calendar state
 machine. Exceptions must be corrected in Calendar or handled explicitly in the
@@ -58,10 +67,11 @@ The page and JSON API have separate access paths:
 - `TRAINING_RADAR_PAGE_PASSWORD` protects the browser page. A successful login
   creates a secure, HTTP-only, SameSite Strict session cookie for 30 days.
 - `TRAINING_RADAR_READ_TOKEN` protects `GET /api/training-radar`. Use an
-  `Authorization: Bearer` header for machine access. Header and query-token
-  compatibility exists, but query tokens should be avoided because URLs can be
-  logged.
-- If no page password is configured, the page falls back to the read token.
+  `Authorization: Bearer` header for machine access. URL query tokens are not
+  accepted.
+- Page and machine credentials are deliberately separate. If no page password
+  is configured, the page fails closed.
+- Failed browser logins are rate-limited after five attempts in 15 minutes.
 - The unauthenticated page does not fetch or render radar data.
 - Page responses are private and non-cacheable. The service worker does not
   cache authenticated HTML. Search indexing is disabled.
@@ -76,6 +86,7 @@ GOOGLE_SERVICE_ACCOUNT
 GOOGLE_CALENDAR_ID
 TRAINING_RADAR_PAGE_PASSWORD
 TRAINING_RADAR_READ_TOKEN
+TOMOS_TRAINING_READ_TOKEN
 RECOVERY_LOG_TOKEN
 ```
 
@@ -88,6 +99,7 @@ From the monorepo root:
 
 ```bash
 pnpm --filter @tomos/dashboard typecheck
+pnpm --filter @tomos/dashboard test
 pnpm --filter @tomos/dashboard build
 pnpm --filter @tomos/dashboard dev
 ```
@@ -127,8 +139,8 @@ live surface before reporting today's training status.
 ## Known Limitations
 
 - Calendar colour and title conventions are manual and can produce exceptions.
-- Same-day run reconciliation establishes that a run happened, not that every
-  prescribed distance or workout detail was satisfied.
+- Reconciliation is intentionally conservative, but Calendar titles and Strava
+  activity names are still free text and may require manual review.
 - Recovery capture is external to the radar. The radar only reads and warns.
-- The first six slipped sessions and race gaps are displayed; counts therefore
-  reflect the surfaced attention list rather than an unlimited archive.
+- The first six slipped sessions, unclear Calendar items, and race gaps are
+  displayed; full matching counts remain visible in their tiles.

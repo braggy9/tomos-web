@@ -1,5 +1,12 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "GOOGLE_CALENDAR_ID",
+    "GOOGLE_SERVICE_ACCOUNT",
+    "TOMOS_TRAINING_READ_TOKEN",
+    "TRAINING_RADAR_PAGE_PASSWORD",
+    "TRAINING_RADAR_READ_TOKEN"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

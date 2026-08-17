@@ -1,19 +1,11 @@
 import { NextResponse } from "next/server";
 import { getTrainingRadarData, parseTrainingRadarOptions } from "../../../lib/trainingRadar";
+import { isValidTrainingRadarReadToken } from "../../../lib/trainingRadarAuth";
 
 function authorized(request: Request): boolean {
-  const expected = process.env.TRAINING_RADAR_READ_TOKEN;
-
-  if (!expected) {
-    return process.env.NODE_ENV !== "production";
-  }
-
-  const url = new URL(request.url);
   const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   const header = request.headers.get("x-training-radar-token");
-  const query = url.searchParams.get("token");
-
-  return [bearer, header, query].some((token) => token === expected);
+  return isValidTrainingRadarReadToken(bearer) || isValidTrainingRadarReadToken(header);
 }
 
 export async function GET(request: Request) {
@@ -34,7 +26,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json(data, {
     headers: {
-      "Cache-Control": "s-maxage=60, stale-while-revalidate=180",
+      "Cache-Control": "private, no-store",
       "X-Robots-Tag": "noindex",
     },
   });

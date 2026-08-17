@@ -2,6 +2,11 @@ import { PROMPTS } from "./prompts";
 
 const API = "https://tomos-task-api.vercel.app";
 
+function trainingReadHeaders(): HeadersInit {
+  const token = process.env.TOMOS_TRAINING_READ_TOKEN?.trim();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export interface McpTool {
   name: string;
   description: string;
@@ -256,7 +261,7 @@ const TOOL_DEFS: { tool: McpTool; handler: ToolHandler }[] = [
       inputSchema: { type: "object", properties: {}, required: [] },
     },
     handler: async () => {
-      const res = await fetch(`${API}/api/gym/running/stats`);
+      const res = await fetch(`${API}/api/gym/running/stats`, { headers: trainingReadHeaders() });
       return res.json();
     },
   },
@@ -278,7 +283,7 @@ const TOOL_DEFS: { tool: McpTool; handler: ToolHandler }[] = [
     },
     handler: async (args) => {
       const q = args.refresh ? "?refresh=true" : "";
-      const res = await fetch(`${API}/api/training/race-logistics${q}`);
+      const res = await fetch(`${API}/api/training/race-logistics${q}`, { headers: trainingReadHeaders() });
       return res.json();
     },
   },
