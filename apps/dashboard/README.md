@@ -43,13 +43,14 @@ defined in `lib/trainingRadar.ts`.
 - General training sessions are inspected over the trailing 14 days.
 - Strength sessions are inspected over 30 days so recurring strength slippage
   remains visible longer.
-- An event must have passed and contain a recognised training marker such as
-  Greta, strength, Car Park, Pilates, easy, tempo, intervals, hills, or a
-  training emoji.
+- An event must have passed and its title must contain a recognised training
+  marker such as strength, Car Park, Pilates, easy, tempo, intervals, hills,
+  or a training emoji. Description text is not used for classification.
 - Results are sorted oldest first. Counts cover every matching item; the first
   six are displayed.
-- Calendar training events with a passed date but neither planned nor done
-  colour are surfaced as `status unclear` for manual review.
+- Managed training events (`Greta Wk...` or Car Park Strength) with a passed
+  date but neither planned nor done colour are surfaced as `status unclear`
+  for manual review. Other calendar entries are excluded.
 - A run-only Calendar item is removed from the slipped list only when an unused
   same-day Strava activity also matches the planned run type and any distance
   stated in the Calendar title.
@@ -123,9 +124,11 @@ After any behavioural or authentication change:
 
 - Production was built from `tomos-web` main commit
   `e22099b46e06892061e437945b1e3369438a1495`.
-- The detector showed two overdue strength sessions, dated 12 and 16 August.
-- A planned 11 August run was initially a false positive. Same-day Strava
-  reconciliation removed it after confirming the completed 8 km run.
+- The detector showed two overdue mixed run, strength, and recovery sessions,
+  dated 12 and 16 August. A completed run does not clear their other planned
+  components.
+- A planned 11 August run was reconciled after Strava confirmed the completed
+  8 km run, so it was correctly excluded from the open list.
 - Race gaps were zero; all races inside 60 days had confirmed registration.
 - Recovery was stale, with the latest check-in dated 6 July.
 - Strava sync was current after a protected 14-day catch-up; the seven-day tile
