@@ -3,7 +3,7 @@
 ## What This Repo Is
 
 TomOS web monorepo. Contains the surviving apps after PWA triage:
-- `apps/dashboard/` — Command Tower (daily dashboard, deployed to Lovable)
+- `apps/dashboard/` — private standalone Training Radar, deployed to Vercel
 - `apps/fitness/` — Fitness PWA (assess later)
 - `apps/legal-mcp/` — TomOS MCP server (rename to `apps/mcp/` pending)
 
@@ -25,15 +25,16 @@ Full rules: https://github.com/braggy9/tomos-command-tower/blob/main/RULES.md
 
 - **Stack:** Next.js 15, TanStack Query v5, Tailwind CSS v4
 - **MCP server:** `apps/legal-mcp/`, endpoint `tomos-mcp.vercel.app/mcp` (30 tools, 19 resources, 16 prompts)
-- **Command Tower:** Rebuilt in Lovable at `tomos-commandtower.lovable.app`. GitHub sync for portability.
+- **Training Radar:** `apps/dashboard/`, canonical production surface at `https://tomos-dashboard.vercel.app`. The old Lovable Command Tower at `tomos-commandtower.lovable.app` is abandoned and is not a deployment target.
+- **Training Radar operations:** See `apps/dashboard/README.md` for authentication, data sources, detector rules, production checks, and known limitations.
 - **Dead apps (removed):** Notes, Legal, Tasks, Journal frontends. Matters + Life frontend removal prepped but not executed.
 - **API routes retained:** All backend routes for matters, journal, training, life still live in the monorepo. Do not remove.
 
 ## Known Issues
 
-- Command Tower: `RangeError: Invalid time value` crash from Todoist recurring task date strings
-- Command Tower: Todoist filter showing all tasks instead of `(today | overdue) & (p1 | p2)`
-- `apps/legal-mcp/` rename to `apps/mcp/` pending
+- Training Radar recovery remains stale until a real recovery check-in is written; the panel deliberately warns instead of treating the old score as current.
+- Planned versus done remains a manual Google Calendar colour convention. The detector surfaces colour-ID 10 training events and does not write back to Calendar.
+- `apps/legal-mcp/` rename to `apps/mcp/` pending.
 
 ## Conventions
 
