@@ -75,6 +75,7 @@ export interface TrainingRadar {
     plannedColorId: string;
     doneColorId: string;
     inspectedEvents: number;
+    reconciledRunSessions: number;
     slippedSessions: {
       id: string;
       title: string;
@@ -152,6 +153,24 @@ function dayDiff(targetDate: string, now: Date): number {
 function eventTime(event: GoogleCalendarEvent, edge: "start" | "end"): string {
   const value = edge === "start" ? event.start : event.end;
   return value?.dateTime || value?.date || "";
+}
+
+function sydneyDateKey(value: string): string | null {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const parts = new Intl.DateTimeFormat("en-AU", {
+    timeZone: "Australia/Sydney",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function isRunSessionType(type: string): boolean {
+  return ["run", "tempo", "intervals", "long run", "hills"].includes(type);
 }
 
 function isTrainingEvent(event: GoogleCalendarEvent): boolean {
@@ -243,7 +262,7 @@ export async function getTrainingRadarData(options: TrainingRadarOptions = {}): 
     }
   }
 
-  const slippedSessions = calendarEvents
+  const slippedCandidates = calendarEvents
     .filter((event) => {
       const start = new Date(eventTime(event, "start"));
       const end = new Date(eventTime(event, "end") || eventTime(event, "start"));
@@ -271,13 +290,14 @@ export async function getTrainingRadarData(options: TrainingRadarOptions = {}): 
         sourceUrl: event.htmlLink || null,
       };
     })
-    .sort((a, b) => b.daysOverdue - a.daysOverdue)
-    .slice(0, 6);
+    .sort((a, b) => b.daysOverdue - a.daysOverdue);
 
   const [raceJson, recoveryJson, activitiesJson, statsJson, stravaStatusJson] = await Promise.all([
     fetchJson<{ data?: { races?: RaceApiRace[] } }>(`${API}/api/training/race-logistics`),
     fetchJson<{ data?: RecoveryData }>(`${API}/api/training/recovery`),
-    fetchJson<{ data?: RunActivity[] }>(`${API}/api/gym/running/activities?days=7&limit=10`),
+    fetchJson<{ data?: RunActivity[] }>(
+      `${API}/api/gym/running/activities?days=${lookbackDays}&limit=20`
+    ),
     fetchJson<{ data?: RunningStats }>(`${API}/api/gym/running/stats?days=7`),
     fetchJson<{ data?: StravaSyncHealth }>(`${API}/api/gym/sync/strava/status`),
   ]);
@@ -320,6 +340,27 @@ export async function getTrainingRadarData(options: TrainingRadarOptions = {}): 
   const recovery = recoveryJson?.data || null;
   const stats = statsJson?.data || null;
   const activities = activitiesJson?.data || [];
+  const completedRunDates = new Set(
+    activities
+      .map((activity) => sydneyDateKey(activity.date))
+      .filter((value): value is string => value !== null)
+  );
+  const hasCompletedRunOn = (value: string): boolean => {
+    const dateKey = sydneyDateKey(value);
+    return dateKey !== null && completedRunDates.has(dateKey);
+  };
+  const reconciledRunSessions = slippedCandidates.filter(
+    (session) =>
+      isRunSessionType(session.sessionType) &&
+      hasCompletedRunOn(session.start)
+  ).length;
+  const slippedSessions = slippedCandidates
+    .filter(
+      (session) =>
+        !isRunSessionType(session.sessionType) ||
+        !hasCompletedRunOn(session.start)
+    )
+    .slice(0, 6);
 
   return {
     generatedAt: now.toISOString(),
@@ -331,6 +372,7 @@ export async function getTrainingRadarData(options: TrainingRadarOptions = {}): 
       plannedColorId: PLANNED_COLOR_ID,
       doneColorId: DONE_COLOR_ID,
       inspectedEvents: calendarEvents.length,
+      reconciledRunSessions,
       slippedSessions,
     },
     raceRadar: {
