@@ -17,6 +17,7 @@ interface Tile {
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString("en-AU", {
+    timeZone: "Australia/Sydney",
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -25,20 +26,13 @@ function formatDate(value: string): string {
 
 function formatGeneratedAt(value: string): string {
   return new Date(value).toLocaleString("en-AU", {
+    timeZone: "Australia/Sydney",
     weekday: "short",
     day: "numeric",
     month: "short",
     hour: "numeric",
     minute: "2-digit",
   });
-}
-
-function recoveryAgeDays(date: string | null | undefined): number | null {
-  if (!date) return null;
-  const then = new Date(date.includes("T") ? date : `${date}T00:00:00+10:00`);
-  if (Number.isNaN(then.getTime())) return null;
-  const now = new Date();
-  return Math.floor((now.getTime() - then.getTime()) / 86400000);
 }
 
 function recoveryLabel(days: number | null): string {
@@ -88,15 +82,26 @@ function EmptyDetail({ children }: { children: React.ReactNode }) {
 
 export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
   const slipped = data.calendar.slippedSessions;
+  const needsClassification = data.calendar.needsClassification;
   const raceGaps = data.raceRadar.unconfirmedRaces;
   const recovery = data.recoveryCrossCheck.recovery;
   const stravaWeek = data.recoveryCrossCheck.strava.last7Days;
   const stravaSync = data.recoveryCrossCheck.strava.syncHealth;
-  const stravaSyncNeedsAttention = !stravaSync || stravaSync.stale;
-  const recoveryDays = recoveryAgeDays(recovery?.date);
+  const calendarHealthy = data.sourceHealth.calendar.status === "healthy";
+  const racesHealthy = data.sourceHealth.races.status === "healthy";
+  const recoveryHealthy = data.sourceHealth.recovery.status === "healthy";
+  const weekSourcesHealthy = [
+    data.sourceHealth.activities,
+    data.sourceHealth.runningStats,
+    data.sourceHealth.stravaSync,
+  ].every((source) => source.status === "healthy");
+  const stravaSyncNeedsAttention = !weekSourcesHealthy || !stravaSync || stravaSync.stale;
+  const recoveryDays = data.recoveryCrossCheck.recoveryAgeDays;
   const recoveryState = recoveryLabel(recoveryDays);
-  const recoveryIsStale = recoveryDays === null || recoveryDays > 3;
-  const recoveryNote = recoveryIsStale
+  const recoveryIsStale = data.recoveryCrossCheck.recoveryStale;
+  const recoveryNote = !recoveryHealthy
+    ? "source unavailable"
+    : recoveryIsStale
     ? recoveryDays === null
       ? "no check-in logged"
       : `last check-in ${recoveryDays}d ago`
@@ -109,37 +114,45 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
       {
         key: "slipped",
         label: "Slipped Sessions",
-        value: String(slipped.length),
-        note:
-          slipped.length === 0
+        value: calendarHealthy ? String(data.calendar.totalSlippedSessions) : "--",
+        note: !calendarHealthy
+          ? "calendar unavailable"
+          : data.calendar.totalNeedsClassification > 0
+            ? `${data.calendar.totalNeedsClassification} status unclear`
+          : data.calendar.totalSlippedSessions === 0
             ? "nothing overdue"
             : `${slipped.filter((item) => item.sessionType === "strength").length} strength`,
-        tone: slipped.length > 0 ? "attention" : "clear",
+        tone:
+          !calendarHealthy || data.calendar.totalSlippedSessions > 0 || data.calendar.totalNeedsClassification > 0
+            ? "attention"
+            : "clear",
         expandable: true,
       },
       {
         key: "races",
         label: "Race Gaps",
-        value: String(raceGaps.length),
-        note: data.raceRadar.nextRace
+        value: racesHealthy ? String(data.raceRadar.totalUnconfirmedRaces) : "--",
+        note: !racesHealthy
+          ? "race source unavailable"
+          : data.raceRadar.nextRace
           ? `${data.raceRadar.nextRace.daysUntil}d to ${data.raceRadar.nextRace.name}`
           : "no dated race",
-        tone: raceGaps.length > 0 ? "attention" : "clear",
+        tone: !racesHealthy || data.raceRadar.totalUnconfirmedRaces > 0 ? "attention" : "clear",
         expandable: true,
       },
       {
         key: "recovery",
         label: "Recovery",
-        value: recoveryState,
+        value: recoveryHealthy ? recoveryState : "--",
         note: recoveryNote,
-        tone: recoveryIsStale ? "attention" : "clear",
+        tone: !recoveryHealthy || recoveryIsStale ? "attention" : "clear",
         expandable: true,
       },
       {
         key: "week",
         label: "This Week",
-        value: kilometres(stravaWeek?.totalDistance),
-        note: !stravaSync
+        value: weekSourcesHealthy ? kilometres(stravaWeek?.totalDistance) : "--",
+        note: !weekSourcesHealthy || !stravaSync
           ? "sync status unavailable"
           : stravaSync.stale
             ? "Strava sync is stale"
@@ -150,7 +163,10 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
     ],
     [
       data,
+      calendarHealthy,
       raceGaps.length,
+      racesHealthy,
+      recoveryHealthy,
       recoveryIsStale,
       recoveryNote,
       recoveryState,
@@ -158,6 +174,7 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
       stravaSync,
       stravaSyncNeedsAttention,
       stravaWeek,
+      weekSourcesHealthy,
     ]
   );
 
@@ -172,7 +189,12 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
           <p>Updated {formatGeneratedAt(data.generatedAt)}</p>
         </div>
         <div className="radar-summary" aria-live="polite">
-          {slipped.length + raceGaps.length === 0 && recoveryDays !== null && recoveryDays <= 3
+          {data.degraded
+            ? "Some checks could not run."
+            : data.calendar.totalSlippedSessions + data.calendar.totalNeedsClassification +
+                  data.raceRadar.totalUnconfirmedRaces === 0 &&
+                !recoveryIsStale &&
+                !stravaSyncNeedsAttention
             ? "Nothing needs attention."
             : "Open items need a look."}
         </div>
@@ -198,7 +220,9 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
         {!selected ? (
           <EmptyDetail>Tap a tile to see the supporting detail.</EmptyDetail>
         ) : selected === "slipped" ? (
-          slipped.length === 0 ? (
+          !calendarHealthy ? (
+            <EmptyDetail>The Calendar check is unavailable, so slippage cannot be assessed.</EmptyDetail>
+          ) : slipped.length === 0 && needsClassification.length === 0 ? (
             <EmptyDetail>No planned training sessions are sitting overdue.</EmptyDetail>
           ) : (
             <div className="radar-list">
@@ -212,15 +236,35 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
                 >
                   <span>
                     <strong>{session.title}</strong>
-                    <small>{session.sessionType} · {formatDate(session.start)}</small>
+                    <small>
+                      {session.sessionType} · {formatDate(session.start)}
+                      {session.possibleActivityMatch ? " · same-day run needs review" : ""}
+                    </small>
                   </span>
                   <b>{session.daysOverdue}d late</b>
+                </a>
+              ))}
+              {needsClassification.map((session) => (
+                <a
+                  className="radar-row"
+                  href={session.sourceUrl || undefined}
+                  key={session.id}
+                  target={session.sourceUrl ? "_blank" : undefined}
+                  rel={session.sourceUrl ? "noreferrer" : undefined}
+                >
+                  <span>
+                    <strong>{session.title}</strong>
+                    <small>{session.sessionType} · {formatDate(session.start)} · Calendar status unclear</small>
+                  </span>
+                  <b>review</b>
                 </a>
               ))}
             </div>
           )
         ) : selected === "races" ? (
-          raceGaps.length === 0 ? (
+          !racesHealthy ? (
+            <EmptyDetail>The race source is unavailable, so registration gaps cannot be assessed.</EmptyDetail>
+          ) : raceGaps.length === 0 ? (
             <EmptyDetail>All races inside {data.raceRadar.windowDays} days have confirmed registration.</EmptyDetail>
           ) : (
             <div className="radar-list">
@@ -238,7 +282,9 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
             </div>
           )
         ) : selected === "recovery" ? (
-          <div className="radar-list">
+          !recoveryHealthy ? (
+            <EmptyDetail>The recovery source is unavailable, so the latest check-in cannot be assessed.</EmptyDetail>
+          ) : <div className="radar-list">
             <div className="radar-row">
               <span>
                 <strong>{recovery ? `Last check-in ${formatDate(recovery.date)}` : "No recovery check-in"}</strong>
@@ -254,7 +300,9 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
             </div>
           </div>
         ) : (
-          <div className="radar-list">
+          !weekSourcesHealthy ? (
+            <EmptyDetail>One or more Strava sources are unavailable, so this week cannot be assessed reliably.</EmptyDetail>
+          ) : <div className="radar-list">
             <div className="radar-row">
               <span>
                 <strong>Strava sync</strong>
@@ -288,8 +336,13 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
           </div>
         )}
 
-        {data.calendar.error && (
-          <p className="radar-degraded">Calendar check degraded: {data.calendar.error}</p>
+        {data.degraded && (
+          <p className="radar-degraded">
+            Unavailable: {Object.entries(data.sourceHealth)
+              .filter(([, source]) => source.status !== "healthy")
+              .map(([name]) => name)
+              .join(", ")}
+          </p>
         )}
       </section>
     </main>

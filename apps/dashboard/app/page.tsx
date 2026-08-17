@@ -9,7 +9,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-function TrainingRadarLogin({ invalid }: { invalid: boolean }) {
+function TrainingRadarLogin({ auth }: { auth?: string }) {
   const configured = isTrainingRadarAuthConfigured();
 
   return (
@@ -28,7 +28,10 @@ function TrainingRadarLogin({ invalid }: { invalid: boolean }) {
               required
               autoFocus
             />
-            {invalid && <p className="radar-login__error">That password was not accepted.</p>}
+            {auth === "invalid" && <p className="radar-login__error">That password was not accepted.</p>}
+            {auth === "limited" && (
+              <p className="radar-login__error">Too many attempts. Please wait 15 minutes and try again.</p>
+            )}
             <button type="submit">Open radar</button>
           </form>
         ) : (
@@ -49,7 +52,7 @@ export default async function TrainingRadarPage({
 
   if (!isValidTrainingRadarSession(session)) {
     const { auth } = await searchParams;
-    return <TrainingRadarLogin invalid={auth === "invalid"} />;
+    return <TrainingRadarLogin auth={auth} />;
   }
 
   const data = await getTrainingRadarData();
