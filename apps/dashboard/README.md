@@ -123,7 +123,8 @@ After any behavioural or authentication change:
 ### Verification snapshot: 17 August 2026
 
 - Production was built from `tomos-web` main commit
-  `e22099b46e06892061e437945b1e3369438a1495`.
+  `c3fb7dd9bee513627c0159c62e5c920c50caa64e`; protected upstream reads were
+  deployed from `TomOS` main commit `8fa78669f9e33f22bb669f7246faf990fb52b9e4`.
 - The detector showed two overdue mixed run, strength, and recovery sessions,
   dated 12 and 16 August. A completed run does not clear their other planned
   components.
@@ -135,6 +136,13 @@ After any behavioural or authentication change:
   showed 37.2 km across three sessions.
 - Authenticated desktop and 390px mobile production checks passed without
   horizontal overflow or layout collisions.
+- Anonymous dashboard and upstream API reads returned HTTP 401; bearer reads
+  returned HTTP 200, and URL query-token access remained disabled.
+- The production monitor sent one successful APNs alert containing the two
+  slipped sessions and stale recovery warning.
+- No false positives or false negatives were found in the inspected 14-day
+  sample. Mixed sessions remain deliberately conservative pending evidence for
+  every planned component.
 
 This snapshot is release evidence, not permanent current-state data. Recheck the
 live surface before reporting today's training status.
