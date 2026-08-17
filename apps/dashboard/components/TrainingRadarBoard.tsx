@@ -121,7 +121,7 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
             ? `${data.calendar.totalNeedsClassification} status unclear`
           : data.calendar.totalSlippedSessions === 0
             ? "nothing overdue"
-            : `${slipped.filter((item) => item.sessionType === "strength").length} strength`,
+            : `${slipped.filter((item) => item.sessionTypes.includes("strength")).length} strength`,
         tone:
           !calendarHealthy || data.calendar.totalSlippedSessions > 0 || data.calendar.totalNeedsClassification > 0
             ? "attention"
