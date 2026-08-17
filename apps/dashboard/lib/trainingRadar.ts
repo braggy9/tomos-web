@@ -55,6 +55,16 @@ export interface RunActivity {
   activityName: string | null;
 }
 
+export interface StravaSyncHealth {
+  provider: string;
+  lastAttemptAt: string | null;
+  lastSuccessAt: string | null;
+  latestActivityAt: string | null;
+  lastError: string | null;
+  staleAfterHours: number;
+  stale: boolean;
+}
+
 export interface TrainingRadar {
   generatedAt: string;
   calendar: {
@@ -100,6 +110,7 @@ export interface TrainingRadar {
     strava: {
       activities: RunActivity[];
       last7Days: RunningStats["last7Days"] | null;
+      syncHealth: StravaSyncHealth | null;
     };
   };
 }
@@ -263,11 +274,12 @@ export async function getTrainingRadarData(options: TrainingRadarOptions = {}): 
     .sort((a, b) => b.daysOverdue - a.daysOverdue)
     .slice(0, 6);
 
-  const [raceJson, recoveryJson, activitiesJson, statsJson] = await Promise.all([
+  const [raceJson, recoveryJson, activitiesJson, statsJson, stravaStatusJson] = await Promise.all([
     fetchJson<{ data?: { races?: RaceApiRace[] } }>(`${API}/api/training/race-logistics`),
     fetchJson<{ data?: RecoveryData }>(`${API}/api/training/recovery`),
     fetchJson<{ data?: RunActivity[] }>(`${API}/api/gym/running/activities?days=7&limit=10`),
     fetchJson<{ data?: RunningStats }>(`${API}/api/gym/running/stats?days=7`),
+    fetchJson<{ data?: StravaSyncHealth }>(`${API}/api/gym/sync/strava/status`),
   ]);
 
   const races = raceJson?.data?.races || [];
@@ -331,6 +343,7 @@ export async function getTrainingRadarData(options: TrainingRadarOptions = {}): 
       strava: {
         activities,
         last7Days: stats?.last7Days || null,
+        syncHealth: stravaStatusJson?.data || null,
       },
     },
   };

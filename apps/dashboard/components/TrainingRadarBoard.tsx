@@ -91,6 +91,8 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
   const raceGaps = data.raceRadar.unconfirmedRaces;
   const recovery = data.recoveryCrossCheck.recovery;
   const stravaWeek = data.recoveryCrossCheck.strava.last7Days;
+  const stravaSync = data.recoveryCrossCheck.strava.syncHealth;
+  const stravaSyncNeedsAttention = !stravaSync || stravaSync.stale;
   const recoveryDays = recoveryAgeDays(recovery?.date);
   const recoveryState = recoveryLabel(recoveryDays);
   const recoveryIsStale = recoveryDays === null || recoveryDays > 3;
@@ -137,12 +139,26 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
         key: "week",
         label: "This Week",
         value: kilometres(stravaWeek?.totalDistance),
-        note: `${stravaWeek?.sessions ?? data.recoveryCrossCheck.strava.activities.length} Strava sessions`,
-        tone: "quiet",
+        note: !stravaSync
+          ? "sync status unavailable"
+          : stravaSync.stale
+            ? "Strava sync is stale"
+            : `${stravaWeek?.sessions ?? data.recoveryCrossCheck.strava.activities.length} Strava sessions`,
+        tone: stravaSyncNeedsAttention ? "attention" : "quiet",
         expandable: true,
       },
     ],
-    [data, raceGaps.length, recoveryIsStale, recoveryNote, recoveryState, slipped, stravaWeek]
+    [
+      data,
+      raceGaps.length,
+      recoveryIsStale,
+      recoveryNote,
+      recoveryState,
+      slipped,
+      stravaSync,
+      stravaSyncNeedsAttention,
+      stravaWeek,
+    ]
   );
 
   const [selected, setSelected] = useState<TileKey | null>(null);
@@ -239,6 +255,17 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
           </div>
         ) : (
           <div className="radar-list">
+            <div className="radar-row">
+              <span>
+                <strong>Strava sync</strong>
+                <small>
+                  {stravaSync?.lastSuccessAt
+                    ? `last successful ${formatGeneratedAt(stravaSync.lastSuccessAt)}`
+                    : "no successful sync has been recorded"}
+                </small>
+              </span>
+              <b>{stravaSync ? (stravaSync.stale ? "stale" : "current") : "unavailable"}</b>
+            </div>
             <div className="radar-row">
               <span>
                 <strong>{kilometres(stravaWeek?.totalDistance)} this week</strong>
