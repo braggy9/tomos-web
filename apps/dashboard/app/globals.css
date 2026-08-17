@@ -48,6 +48,77 @@ a {
   text-decoration: none;
 }
 
+.radar-login-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.radar-login {
+  width: min(100%, 380px);
+}
+
+.radar-login__eyebrow,
+.radar-login label {
+  color: var(--radar-muted);
+  font-family: var(--font-display);
+  font-size: 11px;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.radar-login__eyebrow {
+  margin: 0 0 14px;
+}
+
+.radar-login h1 {
+  margin: 0 0 32px;
+  font-size: 44px;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.radar-login form {
+  display: grid;
+  gap: 10px;
+}
+
+.radar-login input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--radar-line-strong);
+  border-radius: 6px;
+  background: var(--radar-paper);
+  color: var(--radar-text);
+  font: inherit;
+}
+
+.radar-login input:focus-visible {
+  outline: 2px solid var(--radar-clear);
+  outline-offset: 2px;
+}
+
+.radar-login button {
+  min-height: 48px;
+  margin-top: 6px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--radar-text);
+  color: var(--radar-paper);
+  cursor: pointer;
+  font-weight: 620;
+}
+
+.radar-login__error {
+  margin: 2px 0 0;
+  color: var(--radar-attention);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .radar-shell {
   width: min(1120px, calc(100% - 40px));
   min-height: 100vh;

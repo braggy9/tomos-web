@@ -1,5 +1,5 @@
-const CACHE_NAME = "ct-v2";
-const PRECACHE = ["/", "/manifest.json", "/icon.svg"];
+const CACHE_NAME = "radar-v3";
+const PRECACHE = ["/manifest.json", "/icon.svg"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
@@ -23,17 +23,9 @@ self.addEventListener("fetch", (e) => {
   if (url.pathname.startsWith("/api/")) return;
   if (url.hostname !== self.location.hostname) return;
 
-  // Network-first for HTML, cache-first for assets
+  // Personal radar HTML must never be retained in the offline cache.
   if (e.request.headers.get("accept")?.includes("text/html")) {
-    e.respondWith(
-      fetch(e.request)
-        .then((res) => {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(e.request, clone));
-          return res;
-        })
-        .catch(() => caches.match(e.request))
-    );
+    e.respondWith(fetch(e.request));
   } else {
     e.respondWith(
       caches.match(e.request).then((cached) => cached || fetch(e.request))
