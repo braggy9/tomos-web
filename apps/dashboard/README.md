@@ -147,6 +147,45 @@ After any behavioural or authentication change:
 This snapshot is release evidence, not permanent current-state data. Recheck the
 live surface before reporting today's training status.
 
+### Release completion: 18 August 2026
+
+- [PR #14](https://github.com/braggy9/tomos-web/pull/14), commit
+  `c0a41d3ce6a10c5fd4f7764e3ac3e76c67e4caa5`, was deployed from a clean
+  worktree and verified on production deployment
+  `dpl_4yMLu6qUQwXa63VoisNBCUdTuVzD`.
+- The Slipped Sessions tile correctly showed `2 strength` for the two open
+  mixed strength, recovery, and run sessions dated 12 and 16 August.
+- The page-password login succeeded. Anonymous page content contained only the
+  login form, the unauthenticated radar API returned HTTP 401, and private
+  responses remained non-cacheable.
+- Authenticated desktop (1512px) and mobile (390px) checks passed without
+  clipping or horizontal overflow. The protected API returned HTTP 200 with
+  all six sources healthy.
+- No detector-level false positive was found against the green-Calendar
+  contract. The 16 August run component was recorded as completed in the
+  Training Hub, but the mixed event remained green and its strength/recovery
+  components were unconfirmed, so retaining it as an attention item was
+  deliberate.
+
+### Post-release audit: 19 August 2026
+
+- The protected production API returned HTTP 200 with `degraded: false`; all
+  six source-health checks remained healthy.
+- The same two mixed sessions remained open, now 7 and 3 days overdue. No
+  managed events needed status classification.
+- Hounslow 17km was the next race at 25 days, with registration confirmed and
+  zero race gaps inside the 60-day window.
+- Recovery remained stale at 44 days. Strava's scheduled sync succeeded on
+  19 August Sydney time and remained current; the trailing-seven-day context
+  was 39.2 km across three sessions.
+- No further Radar engineering is required for the current scope. The open
+  operational action is to submit a real recovery check-in through the existing
+  TomOS connector and confirm that the stale warning clears. Do not build trend
+  views or load joins until real recovery data exists consistently.
+
+These figures are another dated audit, not live documentation. Use the
+authenticated production endpoint for current counts.
+
 ## Known Limitations
 
 - Calendar colour and title conventions are manual and can produce exceptions.
