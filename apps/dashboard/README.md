@@ -77,8 +77,10 @@ The page and JSON API have separate access paths:
 - Page responses are private and non-cacheable. The service worker does not
   cache authenticated HTML. Search indexing is disabled.
 
-Never commit either secret. Production values live in Vercel; the human-facing
-password is also stored in Tom's local macOS Keychain.
+Never commit either secret. Production values live in Vercel. As at 19 August
+2026, the human-facing password is not stored in Tom's local macOS Keychain;
+retrieve or rotate it through the Vercel project when production verification
+requires an authenticated browser session.
 
 Required dashboard environment variables:
 
@@ -192,6 +194,24 @@ live surface before reporting today's training status.
 
 These figures are another dated audit, not live documentation. Use the
 authenticated production endpoint for current counts.
+
+### Recovery security release: 19 August 2026
+
+- [tomos-web PR #17](https://github.com/braggy9/tomos-web/pull/17), merge
+  `728252cfb98836ac3c9a286f855ae9763576abca`, deployed the authenticated
+  recovery-capture proxy first as production deployment
+  `dpl_9MqcXfcP2SES172cwx7bPYbHKY8f`.
+- [TomOS PR #12](https://github.com/braggy9/TomOS/pull/12), merge
+  `0bc9e1db287f801859045f0a68f1a30848e92fcd`, then protected the six raw
+  recovery-bearing backend routes in production deployment
+  `dpl_CNv1wnB1RmfTzyjxDZnHpGtCKsed`.
+- Anonymous requests to all six routes returned HTTP 401. Authenticated reads
+  returned HTTP 200; an authenticated score outside the 1-5 range returned
+  HTTP 400 and left the recovery row count unchanged at two.
+- The protected Radar remained non-degraded with all six sources healthy and
+  continued to surface the two mixed strength, recovery, and run sessions.
+- The retired Fitness PWA's direct browser calls to those routes now return
+  HTTP 401 by design. It needs a server-authenticated proxy before reuse.
 
 ## Known Limitations
 
