@@ -2,6 +2,12 @@
 
 > Written 2026-03-19. Owner: Tom Bragg.
 
+> **Current status, 19 August 2026:** this is a historical build handover, not
+> live-service documentation. The former `tomos-legal-mcp.vercel.app` and
+> `tomos-mcp.vercel.app` endpoints both return 404 and no TomOS connector is
+> registered in Claude. The source remains useful, and protected training tools
+> now expect `TOMOS_TRAINING_READ_TOKEN` if this app is deployed again.
+
 ---
 
 ## Part 1: What Was Built (Legal)
@@ -336,7 +342,7 @@ Large reference files (templates.md is 665 lines, skill files are 200–350 line
 
 | What | Status | Location |
 |---|---|---|
-| MCP server (renamed tomos-mcp) | ✅ Live | `https://tomos-legal-mcp.vercel.app/mcp` (pending rename) |
+| MCP server | Retired / source only | Former `tomos-legal-mcp.vercel.app` and `tomos-mcp.vercel.app` endpoints return 404 |
 | Legal prompts (11) | ✅ Done | `apps/legal-mcp/lib/prompts.ts` |
 | Legal resources (14) | ✅ Done | `apps/legal-mcp/lib/resources.ts` |
 | Life prompts (5) | ✅ Done | weekly-plan, daily-briefing, weekly-review, shopping-list, habit-checkin |
