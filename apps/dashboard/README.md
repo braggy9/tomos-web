@@ -94,6 +94,11 @@ RECOVERY_LOG_TOKEN
 `GOOGLE_SERVICE_ACCOUNT` is the complete JSON service-account object. The
 configured calendar must be shared read-only with its `client_email`.
 
+Recovery capture is a two-token server-side chain. `/api/recovery-log`
+validates `RECOVERY_LOG_TOKEN` from the capture client, then uses
+`TOMOS_TRAINING_READ_TOKEN` as a bearer credential for the protected TomOS
+recovery write. Neither credential belongs in browser code.
+
 ## Local Verification
 
 From the monorepo root:
@@ -178,10 +183,12 @@ live surface before reporting today's training status.
 - Recovery remained stale at 44 days. Strava's scheduled sync succeeded on
   19 August Sydney time and remained current; the trailing-seven-day context
   was 39.2 km across three sessions.
-- No further Radar engineering is required for the current scope. The open
-  operational action is to submit a real recovery check-in through the existing
-  TomOS connector and confirm that the stale warning clears. Do not build trend
-  views or load joins until real recovery data exists consistently.
+- The first real recovery check-in remains pending. There is no currently
+  deployed TomOS MCP connector: the retained authenticated capture path is the
+  dashboard `/api/recovery-log` proxy. Treat the first check-in as release
+  verification, then observe seven days of capture and APNs reminder behaviour
+  before deciding whether another prompt mechanism is needed. Do not build
+  trend views or load joins until real recovery data exists consistently.
 
 These figures are another dated audit, not live documentation. Use the
 authenticated production endpoint for current counts.
@@ -191,6 +198,8 @@ authenticated production endpoint for current counts.
 - Calendar colour and title conventions are manual and can produce exceptions.
 - Reconciliation is intentionally conservative, but Calendar titles and Strava
   activity names are still free text and may require manual review.
-- Recovery capture is external to the radar. The radar only reads and warns.
+- Recovery capture is external to the radar. The radar only reads and warns;
+  its stale-recovery APNs alert is a lagging detector whose adoption effect must
+  be demonstrated over the seven-day check.
 - The first six slipped sessions, unclear Calendar items, and race gaps are
   displayed; full matching counts remain visible in their tiles.

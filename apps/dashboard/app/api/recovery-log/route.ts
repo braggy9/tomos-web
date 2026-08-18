@@ -55,10 +55,15 @@ function validateScores(values: number[] | null): values is [number, number, num
 
 export async function POST(request: Request) {
   const expectedToken = process.env.RECOVERY_LOG_TOKEN;
+  const trainingToken = process.env.TOMOS_TRAINING_READ_TOKEN?.trim();
 
   if (!expectedToken) {
     console.error("RECOVERY_LOG_TOKEN is not configured");
     return jsonError("recovery_log_not_configured", 503);
+  }
+  if (!trainingToken) {
+    console.error("TOMOS_TRAINING_READ_TOKEN is not configured");
+    return jsonError("training_api_auth_not_configured", 503);
   }
 
   let body: { token?: unknown; scores?: unknown };
@@ -84,6 +89,7 @@ export async function POST(request: Request) {
   const upstream = await fetch(`${API}/api/gym/recovery`, {
     method: "POST",
     headers: {
+      Authorization: `Bearer ${trainingToken}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ sleepQuality, soreness, energy, motivation }),
