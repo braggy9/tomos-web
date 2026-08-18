@@ -77,10 +77,10 @@ The page and JSON API have separate access paths:
 - Page responses are private and non-cacheable. The service worker does not
   cache authenticated HTML. Search indexing is disabled.
 
-Never commit either secret. Production values live in Vercel. As at 19 August
-2026, the human-facing password is not stored in Tom's local macOS Keychain;
-retrieve or rotate it through the Vercel project when production verification
-requires an authenticated browser session.
+Never commit either secret. Production values live in Vercel. The human-facing
+password was rotated on 19 August 2026 and the matching value is stored in
+Tom's macOS Keychain under service `TRAINING_RADAR_PAGE_PASSWORD`, account
+`tomos`.
 
 Required dashboard environment variables:
 
@@ -212,6 +212,10 @@ authenticated production endpoint for current counts.
   continued to surface the two mixed strength, recovery, and run sessions.
 - The retired Fitness PWA's direct browser calls to those routes now return
   HTTP 401 by design. It needs a server-authenticated proxy before reuse.
+- The page password was rotated into Vercel and macOS Keychain, then production
+  was rebuilt as `dpl_9rFzqjqUKjayKXn7V6tfHNNmj6bs`. Authenticated Playwright
+  checks passed at 1512 x 900 and 390 x 844 with the `2 strength` tile visible
+  and no horizontal overflow.
 
 ## Known Limitations
 
