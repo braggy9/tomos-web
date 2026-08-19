@@ -214,15 +214,18 @@ live surface before reporting today's training status.
   managed events needed status classification.
 - Hounslow 17km was the next race at 25 days, with registration confirmed and
   zero race gaps inside the 60-day window.
-- Recovery remained stale at 44 days. Strava's scheduled sync succeeded on
-  19 August Sydney time and remained current; the trailing-seven-day context
-  was 39.2 km across three sessions.
-- The first real recovery check-in remains pending. There is no currently
-  deployed TomOS MCP connector: the retained authenticated capture path is the
-  dashboard `/api/recovery-log` proxy. Treat the first check-in as release
-  verification, then observe seven days of capture and APNs reminder behaviour
-  before deciding whether another prompt mechanism is needed. Do not build
-  trend views or load joins until real recovery data exists consistently.
+- Recovery was stale at 44 days before the first genuine check-in. Strava's
+  scheduled sync succeeded on 19 August Sydney time and remained current; the
+  trailing-seven-day context was 39.2 km across three sessions.
+- Day 0 recovery capture completed on 19 August with scores `3 / 4 / 4 / 5`
+  for sleep quality, freshness, energy, and motivation. The protected backend
+  returned readiness `4.0`, the recovery history increased from two to three
+  rows, and the Radar changed from stale to current with age zero days.
+- There is no currently deployed TomOS MCP connector: the retained
+  authenticated capture path is the dashboard `/api/recovery-log` proxy.
+  Observe seven days of capture and APNs reminder behaviour before deciding
+  whether another prompt mechanism is needed. Do not build trend views or load
+  joins until real recovery data exists consistently.
 
 These figures are another dated audit, not live documentation. Use the
 authenticated production endpoint for current counts.
@@ -248,6 +251,9 @@ authenticated production endpoint for current counts.
   was rebuilt as `dpl_9rFzqjqUKjayKXn7V6tfHNNmj6bs`. Authenticated Playwright
   checks passed at 1512 x 900 and 390 x 844 with the `2 strength` tile visible
   and no horizontal overflow.
+- The previously unrecoverable `RECOVERY_LOG_TOKEN` was rotated for production
+  and preview and stored in macOS Keychain before Day 0 capture. The successful
+  record ID is `bffdd249-c392-4633-9df7-c575e7172062`; no test row was created.
 
 ## Known Limitations
 
