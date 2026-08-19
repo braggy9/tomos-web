@@ -1,4 +1,4 @@
-import { deduplicateEvents, isUpcoming, saleNeedsAttention, type GigEvent } from "./gigRadarLogic";
+import { attractionMatchesArtist, deduplicateEvents, isNswEvent, isUpcoming, saleNeedsAttention, type GigEvent } from "./gigRadarLogic";
 
 interface SpotifyArtist {
   id: string;
@@ -7,8 +7,10 @@ interface SpotifyArtist {
 }
 
 interface SourceHealth {
-  status: "healthy" | "unavailable";
+  status: "healthy" | "degraded" | "unavailable";
   detail?: string;
+  succeeded?: number;
+  failed?: number;
 }
 
 export interface GigRadar {
@@ -61,12 +63,17 @@ async function followedArtists(): Promise<SpotifyArtist[]> {
   return artists;
 }
 
-function ticketmasterEvent(item: Record<string, unknown>, artist: SpotifyArtist): GigEvent | null {
+export function ticketmasterEvent(item: Record<string, unknown>, artist: SpotifyArtist): GigEvent | null {
   const dates = item.dates as { start?: { dateTime?: string; localDate?: string }; status?: { code?: string } } | undefined;
-  const embedded = item._embedded as { venues?: Array<Record<string, unknown>> } | undefined;
+  const embedded = item._embedded as { venues?: Array<Record<string, unknown>>; attractions?: Array<{ name?: string }> } | undefined;
+  const attractionNames = (embedded?.attractions ?? []).flatMap((attraction) => attraction.name ? [attraction.name] : []);
+  // Keyword search is only candidate discovery. Never claim an event unless the
+  // provider explicitly lists the watched artist as an attraction.
+  if (!attractionMatchesArtist(artist.name, attractionNames)) return null;
   const venue = embedded?.venues?.[0];
   const city = venue?.city as { name?: string } | undefined;
   const country = venue?.country as { name?: string } | undefined;
+  const state = venue?.state as { stateCode?: string } | undefined;
   const sales = item.sales as {
     public?: { startDateTime?: string };
     presales?: Array<{ name?: string; startDateTime?: string; endDateTime?: string }>;
@@ -81,6 +88,7 @@ function ticketmasterEvent(item: Record<string, unknown>, artist: SpotifyArtist)
     date,
     venue: typeof venue?.name === "string" ? venue.name : "Venue to be announced",
     city: city?.name ?? "Location to be announced",
+    stateCode: state?.stateCode,
     country: country?.name ?? "",
     ticketUrl: item.url,
     status: dates?.status?.code ?? "scheduled",
@@ -93,25 +101,50 @@ function ticketmasterEvent(item: Record<string, unknown>, artist: SpotifyArtist)
   };
 }
 
-async function ticketmasterEvents(artists: SpotifyArtist[]): Promise<GigEvent[]> {
+interface TicketmasterResult { events: GigEvent[]; succeeded: number; failed: number }
+
+const sleep = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+async function fetchTicketmaster(url: string): Promise<Response> {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(10_000) });
+    if (response.ok || (response.status !== 429 && response.status < 500)) return response;
+    if (attempt < 2) await sleep(Number(response.headers.get("retry-after") ?? 2 ** attempt) * 1_000);
+  }
+  throw new Error("Ticketmaster retries exhausted");
+}
+
+async function ticketmasterEvents(artists: SpotifyArtist[]): Promise<TicketmasterResult> {
   const apiKey = process.env.TICKETMASTER_API_KEY?.trim();
   if (!apiKey) throw new Error("Ticketmaster is not configured");
   const countryCode = process.env.GIG_RADAR_COUNTRY_CODE?.trim() || "AU";
-  const batches: GigEvent[][] = [];
-  for (let offset = 0; offset < artists.length; offset += 5) {
-    const batch = await Promise.all(artists.slice(offset, offset + 5).map(async (artist) => {
-      const query = new URLSearchParams({ apikey: apiKey, keyword: artist.name, countryCode, size: "20", sort: "date,asc" });
-      const response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?${query}`, { cache: "no-store" });
+  const stateCode = process.env.GIG_RADAR_STATE_CODE?.trim() || "NSW";
+  const artistLimit = Math.min(Number(process.env.GIG_RADAR_ARTIST_LIMIT ?? 100) || 100, 500);
+  const events: GigEvent[] = [];
+  let succeeded = 0;
+  let failed = 0;
+  for (let offset = 0; offset < Math.min(artists.length, artistLimit); offset += 5) {
+    const batch = await Promise.allSettled(artists.slice(offset, offset + 5).map(async (artist) => {
+      const query = new URLSearchParams({ apikey: apiKey, keyword: artist.name, countryCode, stateCode, size: "20", sort: "date,asc" });
+      const response = await fetchTicketmaster(`https://app.ticketmaster.com/discovery/v2/events.json?${query}`);
       if (!response.ok) throw new Error(`Ticketmaster returned ${response.status}`);
       const data = (await response.json()) as { _embedded?: { events?: Array<Record<string, unknown>> } };
       return (data._embedded?.events ?? []).map((item) => ticketmasterEvent(item, artist)).filter((event): event is GigEvent => event !== null);
     }));
-    batches.push(batch.flat());
+    for (const result of batch) {
+      if (result.status === "fulfilled") { succeeded += 1; events.push(...result.value); }
+      else failed += 1;
+    }
+    // Ticketmaster's default limit is five requests per second.
+    if (offset + 5 < Math.min(artists.length, artistLimit)) await sleep(1_050);
   }
-  return batches.flat();
+  return { events, succeeded, failed };
 }
 
+let cached: { expiresAt: number; data: GigRadar } | undefined;
+
 export async function getGigRadarData(now = new Date()): Promise<GigRadar> {
+  if (cached && cached.expiresAt > now.getTime()) return cached.data;
   let artists: SpotifyArtist[] = [];
   let events: GigEvent[] = [];
   let spotify: SourceHealth = { status: "healthy" };
@@ -120,19 +153,33 @@ export async function getGigRadarData(now = new Date()): Promise<GigRadar> {
     spotify = { status: "unavailable", detail: error instanceof Error ? error.message : "Spotify request failed" };
   }
   if (spotify.status === "healthy") {
-    try { events = await ticketmasterEvents(artists); } catch (error) {
+    try {
+      const result = await ticketmasterEvents(artists);
+      events = result.events;
+      ticketmaster = {
+        status: result.failed ? (result.succeeded ? "degraded" : "unavailable") : "healthy",
+        detail: result.failed ? `${result.failed} artist searches failed; successful results are still shown.` : undefined,
+        succeeded: result.succeeded,
+        failed: result.failed,
+      };
+    } catch (error) {
       ticketmaster = { status: "unavailable", detail: error instanceof Error ? error.message : "Ticketmaster request failed" };
     }
   } else {
     ticketmaster = { status: "unavailable", detail: "Waiting for Spotify artist data" };
   }
-  events = deduplicateEvents(events).filter((event) => isUpcoming(event, now)).sort((a, b) => a.date.localeCompare(b.date));
-  return {
+  events = deduplicateEvents(events).filter((event) => isNswEvent(event) && isUpcoming(event, now)).sort((a, b) => a.date.localeCompare(b.date));
+  const data = {
     generatedAt: now.toISOString(),
-    configured: spotify.status === "healthy" && ticketmaster.status === "healthy",
+    configured: spotify.status === "healthy" && ticketmaster.status !== "unavailable",
     artists,
     events,
     saleAlerts: events.filter((event) => saleNeedsAttention(event, now)),
     sourceHealth: { spotify, ticketmaster },
   };
+  // Do not pin a temporary credential/provider outage in memory for six hours.
+  if (spotify.status === "healthy" && ticketmaster.status !== "unavailable") {
+    cached = { expiresAt: now.getTime() + 6 * 60 * 60 * 1_000, data };
+  }
+  return data;
 }

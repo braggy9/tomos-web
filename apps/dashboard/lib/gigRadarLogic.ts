@@ -6,11 +6,22 @@ export interface GigEvent {
   date: string;
   venue: string;
   city: string;
+  stateCode?: string;
   country: string;
   ticketUrl: string;
   status: string;
   publicSaleAt?: string;
   presales: Array<{ name: string; start?: string; end?: string }>;
+}
+
+export function isNswEvent(event: Pick<GigEvent, "city" | "stateCode">): boolean {
+  if (event.stateCode?.toUpperCase() === "NSW") return true;
+  return /\b(sydney|parramatta|newcastle|wollongong)\b/i.test(event.city);
+}
+
+export function attractionMatchesArtist(artistName: string, attractionNames: string[]): boolean {
+  const wanted = normaliseArtistName(artistName);
+  return attractionNames.some((name) => normaliseArtistName(name) === wanted);
 }
 
 export function normaliseArtistName(value: string): string {
