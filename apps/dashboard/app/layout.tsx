@@ -3,8 +3,8 @@ import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Training Radar",
-  description: "TomOS Training Radar",
+  title: "TomOS Radar",
+  description: "Private attention radars for training and live music",
   robots: {
     index: false,
     follow: false,

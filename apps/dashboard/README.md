@@ -1,5 +1,37 @@
 # Training Radar
 
+## Gig Radar MVP
+
+The authenticated `/gigs` route imports the account's followed Spotify artists
+and discovers their upcoming Sydney and New South Wales shows through Ticketmaster. It is a
+live, read-only discovery surface: persistence, scheduled alerts, user event
+decisions, and additional event providers remain future work.
+
+Gig Radar fails visibly when either source is unavailable. It does not interpret
+a provider failure as an empty watchlist or as no upcoming shows. The machine
+endpoint at `GET /api/gig-radar` uses the existing
+`TRAINING_RADAR_READ_TOKEN` bearer credential.
+
+Additional environment variables:
+
+```text
+SPOTIFY_CLIENT_ID
+SPOTIFY_CLIENT_SECRET
+SPOTIFY_REFRESH_TOKEN
+TICKETMASTER_API_KEY
+GIG_RADAR_COUNTRY_CODE=AU
+GIG_RADAR_STATE_CODE=NSW
+GIG_RADAR_ARTIST_LIMIT=100
+```
+
+The Spotify refresh token must have the `user-follow-read` scope. Secrets remain
+server-side. Spotify pagination is limited to 500 followed artists, while a scan
+checks at most 100 by default. Ticketmaster searches are paced to five per second,
+retried on transient failures, cached for six hours per warm server instance, and
+restricted to NSW. Keyword results are accepted only when the watched artist is
+explicitly listed in the event attractions. Provider partial failures are shown
+as degraded without discarding successful results.
+
 Private, read-only training attention surface deployed at
 `https://tomos-dashboard.vercel.app`.
 

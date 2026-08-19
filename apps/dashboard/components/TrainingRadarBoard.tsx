@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import type { TrainingRadar } from "../lib/trainingRadar";
 
 type TileKey = "slipped" | "races" | "recovery" | "week";
@@ -183,6 +184,7 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
 
   return (
     <main className="radar-shell">
+      <nav className="radar-nav" aria-label="Radar sections"><strong>Training</strong><Link href="/gigs">Gigs</Link></nav>
       <section className="radar-hero" aria-labelledby="training-radar-title">
         <div>
           <h1 id="training-radar-title">Training Radar</h1>
