@@ -180,7 +180,9 @@ const TOOL_DEFS: { tool: McpTool; handler: ToolHandler }[] = [
       inputSchema: { type: "object", properties: {}, required: [] },
     },
     handler: async () => {
-      const res = await fetch(`${API}/api/gym/coach/today`);
+      const res = await fetch(`${API}/api/gym/coach/today`, {
+        headers: trainingReadHeaders(),
+      });
       return res.json();
     },
   },
@@ -199,7 +201,9 @@ const TOOL_DEFS: { tool: McpTool; handler: ToolHandler }[] = [
     },
     handler: async (args) => {
       const days = (args.days as number) || 7;
-      const res = await fetch(`${API}/api/gym/coach/summary?days=${days}`);
+      const res = await fetch(`${API}/api/gym/coach/summary?days=${days}`, {
+        headers: trainingReadHeaders(),
+      });
       return res.json();
     },
   },
@@ -230,7 +234,9 @@ const TOOL_DEFS: { tool: McpTool; handler: ToolHandler }[] = [
       inputSchema: { type: "object", properties: {}, required: [] },
     },
     handler: async () => {
-      const res = await fetch(`${API}/api/gym/dashboard/weekly`);
+      const res = await fetch(`${API}/api/gym/dashboard/weekly`, {
+        headers: trainingReadHeaders(),
+      });
       return res.json();
     },
   },
@@ -249,7 +255,9 @@ const TOOL_DEFS: { tool: McpTool; handler: ToolHandler }[] = [
     },
     handler: async (args) => {
       const days = (args.days as number) || 7;
-      const res = await fetch(`${API}/api/gym/recovery?days=${days}`);
+      const res = await fetch(`${API}/api/gym/recovery?days=${days}`, {
+        headers: trainingReadHeaders(),
+      });
       return res.json();
     },
   },
@@ -401,7 +409,10 @@ const TOOL_DEFS: { tool: McpTool; handler: ToolHandler }[] = [
     handler: async (args) => {
       const res = await fetch(`${API}/api/gym/recovery`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          ...trainingReadHeaders(),
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(args),
       });
       return res.json();

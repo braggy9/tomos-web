@@ -83,6 +83,38 @@ current implementation still needs a pre-generated refresh token.
 - Exact attraction matching avoids broad keyword false positives but may miss
   legitimate aliases.
 
+## Gig Radar MVP
+
+The authenticated `/gigs` route imports the account's followed Spotify artists
+and discovers their upcoming Sydney and New South Wales shows through Ticketmaster. It is a
+live, read-only discovery surface: persistence, scheduled alerts, user event
+decisions, and additional event providers remain future work.
+
+Gig Radar fails visibly when either source is unavailable. It does not interpret
+a provider failure as an empty watchlist or as no upcoming shows. The machine
+endpoint at `GET /api/gig-radar` uses the existing
+`TRAINING_RADAR_READ_TOKEN` bearer credential.
+
+Additional environment variables:
+
+```text
+SPOTIFY_CLIENT_ID
+SPOTIFY_CLIENT_SECRET
+SPOTIFY_REFRESH_TOKEN
+TICKETMASTER_API_KEY
+GIG_RADAR_COUNTRY_CODE=AU
+GIG_RADAR_STATE_CODE=NSW
+GIG_RADAR_ARTIST_LIMIT=100
+```
+
+The Spotify refresh token must have the `user-follow-read` scope. Secrets remain
+server-side. Spotify pagination is limited to 500 followed artists, while a scan
+checks at most 100 by default. Ticketmaster searches are paced to five per second,
+retried on transient failures, cached for six hours per warm server instance, and
+restricted to NSW. Keyword results are accepted only when the watched artist is
+explicitly listed in the event attractions. Provider partial failures are shown
+as degraded without discarding successful results.
+
 Private, read-only training attention surface deployed at
 `https://tomos-dashboard.vercel.app`.
 
@@ -160,8 +192,10 @@ The page and JSON API have separate access paths:
 - Page responses are private and non-cacheable. The service worker does not
   cache authenticated HTML. Search indexing is disabled.
 
-Never commit either secret. Production values live in Vercel; the human-facing
-password is also stored in Tom's local macOS Keychain.
+Never commit either secret. Production values live in Vercel. The human-facing
+password was rotated on 19 August 2026 and the matching value is stored in
+Tom's macOS Keychain under service `TRAINING_RADAR_PAGE_PASSWORD`, account
+`tomos`.
 
 Required dashboard environment variables:
 
@@ -176,6 +210,11 @@ RECOVERY_LOG_TOKEN
 
 `GOOGLE_SERVICE_ACCOUNT` is the complete JSON service-account object. The
 configured calendar must be shared read-only with its `client_email`.
+
+Recovery capture is a two-token server-side chain. `/api/recovery-log`
+validates `RECOVERY_LOG_TOKEN` from the capture client, then uses
+`TOMOS_TRAINING_READ_TOKEN` as a bearer credential for the protected TomOS
+recovery write. Neither credential belongs in browser code.
 
 ## Local Verification
 
@@ -230,11 +269,82 @@ After any behavioural or authentication change:
 This snapshot is release evidence, not permanent current-state data. Recheck the
 live surface before reporting today's training status.
 
+### Release completion: 18 August 2026
+
+- [PR #14](https://github.com/braggy9/tomos-web/pull/14), commit
+  `c0a41d3ce6a10c5fd4f7764e3ac3e76c67e4caa5`, was deployed from a clean
+  worktree and verified on production deployment
+  `dpl_4yMLu6qUQwXa63VoisNBCUdTuVzD`.
+- The Slipped Sessions tile correctly showed `2 strength` for the two open
+  mixed strength, recovery, and run sessions dated 12 and 16 August.
+- The page-password login succeeded. Anonymous page content contained only the
+  login form, the unauthenticated radar API returned HTTP 401, and private
+  responses remained non-cacheable.
+- Authenticated desktop (1512px) and mobile (390px) checks passed without
+  clipping or horizontal overflow. The protected API returned HTTP 200 with
+  all six sources healthy.
+- No detector-level false positive was found against the green-Calendar
+  contract. The 16 August run component was recorded as completed in the
+  Training Hub, but the mixed event remained green and its strength/recovery
+  components were unconfirmed, so retaining it as an attention item was
+  deliberate.
+
+### Post-release audit: 19 August 2026
+
+- The protected production API returned HTTP 200 with `degraded: false`; all
+  six source-health checks remained healthy.
+- The same two mixed sessions remained open, now 7 and 3 days overdue. No
+  managed events needed status classification.
+- Hounslow 17km was the next race at 25 days, with registration confirmed and
+  zero race gaps inside the 60-day window.
+- Recovery was stale at 44 days before the first genuine check-in. Strava's
+  scheduled sync succeeded on 19 August Sydney time and remained current; the
+  trailing-seven-day context was 39.2 km across three sessions.
+- Day 0 recovery capture completed on 19 August with scores `3 / 4 / 4 / 5`
+  for sleep quality, freshness, energy, and motivation. The protected backend
+  returned readiness `4.0`, the recovery history increased from two to three
+  rows, and the Radar changed from stale to current with age zero days.
+- There is no currently deployed TomOS MCP connector: the retained
+  authenticated capture path is the dashboard `/api/recovery-log` proxy.
+  Observe seven days of capture and APNs reminder behaviour before deciding
+  whether another prompt mechanism is needed. Do not build trend views or load
+  joins until real recovery data exists consistently.
+
+These figures are another dated audit, not live documentation. Use the
+authenticated production endpoint for current counts.
+
+### Recovery security release: 19 August 2026
+
+- [tomos-web PR #17](https://github.com/braggy9/tomos-web/pull/17), merge
+  `728252cfb98836ac3c9a286f855ae9763576abca`, deployed the authenticated
+  recovery-capture proxy first as production deployment
+  `dpl_9MqcXfcP2SES172cwx7bPYbHKY8f`.
+- [TomOS PR #12](https://github.com/braggy9/TomOS/pull/12), merge
+  `0bc9e1db287f801859045f0a68f1a30848e92fcd`, then protected the six raw
+  recovery-bearing backend routes in production deployment
+  `dpl_CNv1wnB1RmfTzyjxDZnHpGtCKsed`.
+- Anonymous requests to all six routes returned HTTP 401. Authenticated reads
+  returned HTTP 200; an authenticated score outside the 1-5 range returned
+  HTTP 400 and left the recovery row count unchanged at two.
+- The protected Radar remained non-degraded with all six sources healthy and
+  continued to surface the two mixed strength, recovery, and run sessions.
+- The retired Fitness PWA's direct browser calls to those routes now return
+  HTTP 401 by design. It needs a server-authenticated proxy before reuse.
+- The page password was rotated into Vercel and macOS Keychain, then production
+  was rebuilt as `dpl_9rFzqjqUKjayKXn7V6tfHNNmj6bs`. Authenticated Playwright
+  checks passed at 1512 x 900 and 390 x 844 with the `2 strength` tile visible
+  and no horizontal overflow.
+- The previously unrecoverable `RECOVERY_LOG_TOKEN` was rotated for production
+  and preview and stored in macOS Keychain before Day 0 capture. The successful
+  record ID is `bffdd249-c392-4633-9df7-c575e7172062`; no test row was created.
+
 ## Known Limitations
 
 - Calendar colour and title conventions are manual and can produce exceptions.
 - Reconciliation is intentionally conservative, but Calendar titles and Strava
   activity names are still free text and may require manual review.
-- Recovery capture is external to the radar. The radar only reads and warns.
+- Recovery capture is external to the radar. The radar only reads and warns;
+  its stale-recovery APNs alert is a lagging detector whose adoption effect must
+  be demonstrated over the seven-day check.
 - The first six slipped sessions, unclear Calendar items, and race gaps are
   displayed; full matching counts remain visible in their tiles.
