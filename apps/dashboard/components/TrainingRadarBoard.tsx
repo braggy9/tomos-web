@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { TrainingRadar } from "../lib/trainingRadar";
+import { RadarNav } from "./RadarNav";
 
 type TileKey = "slipped" | "races" | "recovery" | "week";
 type Tone = "clear" | "attention" | "quiet";
@@ -183,6 +184,7 @@ export function TrainingRadarBoard({ data }: { data: TrainingRadar }) {
 
   return (
     <main className="radar-shell">
+      <RadarNav active="training" />
       <section className="radar-hero" aria-labelledby="training-radar-title">
         <div>
           <h1 id="training-radar-title">Training Radar</h1>
