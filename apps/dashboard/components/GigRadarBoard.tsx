@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { GigRadar } from "../lib/gigRadar";
 import type { GigEvent } from "../lib/gigRadarLogic";
+import { RadarNav } from "./RadarNav";
 
 function localDate(value: string): string {
   return new Date(value).toLocaleDateString("en-AU", { timeZone: "Australia/Sydney", weekday: "short", day: "numeric", month: "short", year: "numeric" });
@@ -30,7 +30,7 @@ export function GigRadarBoard({ data }: { data: GigRadar }) {
   const sourceProblems = Object.entries(data.sourceHealth).filter(([, source]) => source.status !== "healthy");
   return (
     <main className="gig-shell">
-      <nav className="gig-nav" aria-label="Radar sections"><Link href="/">Training</Link><strong>Gigs</strong></nav>
+      <RadarNav active="gigs" />
       <header className="gig-hero">
         <div><p>TomOS / Sydney &amp; NSW live music</p><h1>Gig Radar</h1></div>
         <aside><strong>{data.events.length}</strong><span>upcoming shows</span></aside>

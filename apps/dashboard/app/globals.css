@@ -43,21 +43,67 @@ a {
   font: inherit;
 }
 
-.radar-nav,
-.gig-nav {
-  display: flex;
-  gap: 18px;
+.radar-switcher {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
   margin-bottom: 34px;
+  padding: 4px;
+  border: 1px solid var(--radar-line);
+  border-radius: 10px;
+  background: rgba(255, 253, 250, 0.72);
+}
+
+.radar-switcher__item {
+  display: grid;
+  min-width: 174px;
+  gap: 3px;
+  padding: 10px 14px;
+  border-radius: 6px;
   color: var(--radar-muted);
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.radar-switcher__item > span {
   font-family: var(--font-display);
   font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.radar-nav strong,
-.gig-nav strong { color: var(--radar-text); }
-.radar-nav a:hover,
-.gig-nav a:hover { color: var(--radar-text); }
+.radar-switcher__item small {
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.radar-switcher__item.is-active {
+  background: var(--radar-text);
+  color: var(--radar-paper);
+  box-shadow: 0 1px 2px rgba(38, 35, 31, 0.18);
+}
+
+a.radar-switcher__item:hover {
+  background: var(--radar-attention-bg);
+  color: var(--radar-text);
+}
+
+a.radar-switcher__item:focus-visible {
+  outline: 2px solid var(--radar-attention);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .radar-switcher {
+    display: grid;
+    width: 100%;
+  }
+
+  .radar-switcher__item {
+    min-width: 0;
+    padding-inline: 10px;
+  }
+}
 
 a {
   color: inherit;

@@ -1,4 +1,87 @@
-# Training Radar
+# TomOS Radar
+
+Private Training Radar and Gig Radar surfaces deployed at
+`https://tomos-dashboard.vercel.app`. For the current Gig Radar implementation
+state, security actions, release closeout, and next engineering milestones, see
+[`HANDOVER.md`](./HANDOVER.md).
+
+## Gig Radar MVP
+
+The authenticated `/gigs` route imports the account's followed Spotify artists
+and discovers their upcoming Sydney and New South Wales shows through Ticketmaster. It is a
+live, read-only discovery surface: persistence, scheduled alerts, user event
+decisions, and additional event providers remain future work.
+
+The human routes share a two-option navigation switcher. `Training Radar`
+describes training and recovery; `Gig Radar` describes Sydney and NSW shows. The
+active route is visually selected and exposed with `aria-current="page"`.
+
+Gig Radar fails visibly when either source is unavailable. It does not interpret
+a provider failure as an empty watchlist or as no upcoming shows. The machine
+endpoint at `GET /api/gig-radar` uses the existing
+`TRAINING_RADAR_READ_TOKEN` bearer credential.
+
+Additional environment variables:
+
+```text
+SPOTIFY_CLIENT_ID
+SPOTIFY_CLIENT_SECRET
+SPOTIFY_REFRESH_TOKEN
+TICKETMASTER_API_KEY
+GIG_RADAR_COUNTRY_CODE=AU
+GIG_RADAR_STATE_CODE=NSW
+GIG_RADAR_ARTIST_LIMIT=100
+```
+
+`TICKETMASTER_API_KEY` is the Ticketmaster Discovery **Consumer Key**. The
+Consumer Secret is not used by this implementation and should not be retained
+as an unnecessary Vercel variable.
+
+The Spotify refresh token must have the `user-follow-read` scope. Secrets remain
+server-side. Spotify pagination is limited to 500 followed artists, while a scan
+checks at most 100 by default. Ticketmaster searches are paced to five per second,
+retried on transient failures, cached for six hours per warm server instance, and
+restricted to NSW. Keyword results are accepted only when the watched artist is
+explicitly listed in the event attractions. Provider partial failures are shown
+as degraded without discarding successful results.
+
+Opening `/gigs` currently initiates this aggregation during server rendering.
+The cache is process memory only: it is not durable, is not shared across
+serverless instances, and cannot identify new, changed, notified, or missed
+events.
+
+### Gig Radar production setup
+
+1. Add the variables above to the Vercel project for Production.
+2. Confirm the Spotify secret is current and was never exposed. If it was shared
+   in chat or logs, rotate it before use.
+3. Ensure `SPOTIFY_REFRESH_TOKEN` belongs to the same Spotify application and
+   includes `user-follow-read`.
+4. Store the Ticketmaster Consumer Key—not its Consumer Secret—as
+   `TICKETMASTER_API_KEY`.
+5. Redeploy after changing environment variables.
+6. Sign in, open `/gigs`, and confirm Spotify is healthy, the artist count is
+   expected, and Ticketmaster is healthy or explicitly degraded.
+7. Manually compare returned events with Ticketmaster before calling the live
+   integration verified.
+
+The registered production Spotify redirect URI is expected to be
+`https://tomos-dashboard.vercel.app/api/spotify/callback`, but that route is not
+implemented in this MVP. Registering the URI does not connect Spotify; the
+current implementation still needs a pre-generated refresh token.
+
+### Gig Radar known limitations
+
+- No Spotify OAuth connect/callback/disconnect flow.
+- Only followed artists are imported.
+- No persistent artist, event, scan, decision, or notification records.
+- No scheduled background scan; page and API reads perform discovery.
+- No new-announcement or missed-event classification.
+- No push or email notifications.
+- No artist priorities, ignore rules, radius settings, or user event decisions.
+- Ticketmaster is the only event provider.
+- Exact attraction matching avoids broad keyword false positives but may miss
+  legitimate aliases.
 
 ## Gig Radar MVP
 
