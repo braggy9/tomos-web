@@ -94,6 +94,51 @@ current implementation.
 Do not create `NEXT_PUBLIC_` versions of credentials. All provider credentials
 are server-only.
 
+### Generating `SPOTIFY_REFRESH_TOKEN`
+
+The three Spotify values are not interchangeable. The client ID and secret come
+from the Spotify developer dashboard; the refresh token is produced once by a
+user-authorisation round trip and cannot be derived from the other two.
+`lib/gigRadar.ts` refreshes it against `https://accounts.spotify.com/api/token`
+with HTTP Basic auth and `grant_type=refresh_token`, then calls
+`GET https://api.spotify.com/v1/me/following?type=artist`. That endpoint
+requires the `user-follow-read` scope, so a token minted without it authenticates
+successfully and then fails the artist read.
+
+Run this on a machine with a browser and a terminal. Never paste any of these
+values into a chat, an issue, a commit, or PR text.
+
+1. In the Spotify developer dashboard, open the application, and register a
+   redirect URI for local use. Spotify restricts redirect URIs to HTTPS with a
+   loopback exception; use whichever loopback form the dashboard accepts
+   (`http://127.0.0.1:8888/callback` is the documented form at time of writing).
+   Save it exactly as entered — the value must match byte-for-byte at both
+   steps below.
+2. Visit the authorisation URL in a browser, signed in as the Spotify account
+   whose followed artists Gig Radar should watch:
+   `https://accounts.spotify.com/authorize?client_id=YOUR_CLIENT_ID&response_type=code&redirect_uri=YOUR_REDIRECT_URI&scope=user-follow-read`
+   The redirect URI must be URL-encoded in that query string.
+3. Approve the request. The browser is redirected to the redirect URI with a
+   `code` query parameter. The page itself will not load unless something is
+   listening on that port; copy the `code` value out of the address bar. It is
+   single-use and expires quickly.
+4. Exchange it, substituting the same redirect URI:
+   ```bash
+   curl -u "$SPOTIFY_CLIENT_ID:$SPOTIFY_CLIENT_SECRET" \
+     -d grant_type=authorization_code \
+     -d code=THE_CODE \
+     --data-urlencode redirect_uri=YOUR_REDIRECT_URI \
+     https://accounts.spotify.com/api/token
+   ```
+   Read `refresh_token` from the JSON response. Spotify returns it only on this
+   authorization-code exchange, not on subsequent refreshes.
+5. Store it as `SPOTIFY_REFRESH_TOKEN` in Vercel Production and redeploy.
+
+Confirm afterwards that `Artists watched` on `/gigs` is non-zero and roughly
+matches the account's real following count, capped at `GIG_RADAR_ARTIST_LIMIT`.
+A zero count with Spotify reporting healthy means the token authenticated as an
+account that follows nobody, which is a different fault from a missing scope.
+
 ## Known Gaps and Risks
 
 ### Product gaps
@@ -266,6 +311,57 @@ evidence without claiming missing capabilities. Do not merge or rotate secrets
 without explicit approval. After Phase 1 is verified, propose the smallest
 vertical slice for Spotify OAuth plus durable storage and wait for approval.
 ```
+
+## Production Verification Record
+
+### 14 September 2026 — Phase 1 blocked, providers unconfigured
+
+Verified against production `https://tomos-dashboard.vercel.app`, built from
+`tomos-web` main `e4510bb` (the merge of PR #21). This is a dated observation,
+not current-state documentation.
+
+**Phase 1 does not close.** The authenticated `/gigs` page reported:
+
+| Field | Observed |
+| --- | --- |
+| Source attention | Spotify — "Spotify credentials are not configured" |
+| Source attention | Ticketmaster — "Waiting for Spotify artist data" |
+| Artists watched | 0 |
+| Sales this week | 0 |
+| Sources available | 0/2 |
+| Diary | "No shows on the radar yet." |
+
+Root cause is configuration, not code. `lib/gigRadar.ts` raises that exact
+Spotify string when any of `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` or
+`SPOTIFY_REFRESH_TOKEN` is absent or blank. The Spotify variables were never
+set on the Vercel project.
+
+Ticketmaster's state is **unknown, not failed**. Its message is downstream of
+the Spotify failure: with no artists imported there is nothing to search, so
+`TICKETMASTER_API_KEY` has not been exercised and may also be unset. Do not
+record Ticketmaster as either healthy or broken on this evidence.
+
+**What did verify.** The shared `RadarNav` switcher renders on both surfaces
+with the correct labels, so that part of the PR #21 change is confirmed in
+production. Anonymous responses matched the Live-state audit expectations:
+`/` 200 serving only the login surface under `private, no-store` with
+`x-robots-tag: noindex` and no radar data in the markup; `/gigs` 307;
+`/api/training-radar` and `/api/gig-radar` 401 including with a URL query
+token; `/api/spotify/callback` 404. The six protected upstream recovery routes
+on `tomos-task-api.vercel.app` each returned 401.
+
+**Not verified, and not verifiable until credentials exist:** Spotify health
+and a non-zero artist import, Ticketmaster health, event spot-checks against
+Ticketmaster listings, and the watched-artist false-positive/false-negative
+sample. The desktop-width navigation check is also outstanding; the 390px
+mobile check passed on an iPhone viewport.
+
+A correction worth recording, since it nearly entered this document as a
+finding: the Spotify connector used during this review returns at most five
+followed artists, an arbitrary slice ordered by artist ID. Reasoning about
+which artists the owner does or does not follow from that sample produced a
+false conclusion. Artist coverage must be established from the account itself
+or from `Artists watched`, never from that connector.
 
 ## Handover Principle
 
