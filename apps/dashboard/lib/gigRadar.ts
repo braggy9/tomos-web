@@ -35,8 +35,13 @@ async function resolveRefreshToken(): Promise<string | null> {
   try {
     state = await readSpotifyAuthState();
   } catch (error) {
-    // A store failure must not masquerade as "not connected": surface it.
-    throw new Error(`Spotify token store unavailable: ${error instanceof Error ? error.message : "unknown error"}`);
+    // A store failure must not masquerade as "not connected". The message is
+    // logged rather than thrown onward: this detail reaches sourceHealth, which
+    // /api/gig-radar serves to any TRAINING_RADAR_READ_TOKEN holder — a broader
+    // credential than the owner's password — and a driver error can name the
+    // database host.
+    console.error("Spotify token store unavailable", error instanceof Error ? error.message : error);
+    throw new Error("Spotify token store unavailable");
   }
   if (state.kind === "connected") return state.auth.refreshToken;
   // An explicit disconnect must not be undone by a lingering env var, or

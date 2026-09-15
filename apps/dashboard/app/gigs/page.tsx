@@ -24,7 +24,10 @@ function safeReason(reason?: string): string | null {
 
 function notice(status?: string, reason?: string): string | null {
   if (!status) return null;
-  const base = NOTICES[status];
+  // A plain object literal resolves prototype keys, so ?spotify=__proto__
+  // returned an object and ?spotify=toString a function — both typed string and
+  // rendered as a React child, throwing during server render.
+  const base = Object.hasOwn(NOTICES, status) ? NOTICES[status] : undefined;
   if (!base) return null;
   const detail = safeReason(reason);
   return detail ? `${base} (${detail})` : base;

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { hasFollowReadScope, knownSpotifyError, redirectUri, SPOTIFY_TOKEN_URL, verifyState } from "../../../../lib/spotifyOAuth";
+import { hasFollowReadScope, knownSpotifyError, redirectUri, SPOTIFY_NONCE_COOKIE, SPOTIFY_TOKEN_URL, stateNonce, verifyState } from "../../../../lib/spotifyOAuth";
+import { cookies } from "next/headers";
 import { saveSpotifyAuth } from "../../../../lib/spotifyAuthStore";
 import { invalidateGigRadarCache } from "../../../../lib/gigRadar";
 
@@ -10,7 +11,11 @@ const PRIVATE_HEADERS = { "Cache-Control": "no-store", "X-Robots-Tag": "noindex"
 function back(origin: string, params: Record<string, string>) {
   const url = new URL("/gigs", origin);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
-  return NextResponse.redirect(url, { headers: PRIVATE_HEADERS });
+  const response = NextResponse.redirect(url, { headers: PRIVATE_HEADERS });
+  // Always burn the nonce, success or failure: a state that reached the
+  // callback must not be usable a second time.
+  response.cookies.set(SPOTIFY_NONCE_COOKIE, "", { httpOnly: true, path: "/api/spotify", maxAge: 0 });
+  return response;
 }
 
 /**
@@ -30,8 +35,25 @@ export async function GET(request: Request) {
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET?.trim();
   if (!clientId || !clientSecret) return back(origin, { spotify: "error", reason: "credentials_not_configured" });
 
-  const verdict = verifyState(url.searchParams.get("state"), clientSecret);
-  if (!verdict.valid) return back(origin, { spotify: "error", reason: `state_${verdict.reason}` });
+  const state = url.searchParams.get("state");
+  const verdict = verifyState(state, clientSecret);
+  if (!verdict.valid) {
+    // One code for every state failure. Distinguishing malformed from expired
+    // from bad-signature told an anonymous prober whether a state it held was
+    // still live; the specific reason goes to the logs instead.
+    console.error("Spotify callback state rejected", { reason: verdict.reason });
+    return back(origin, { spotify: "error", reason: "state_invalid" });
+  }
+
+  // Double-submit check: the state must have been issued to this browser, and
+  // the cookie is cleared by back(), so a replay finds nothing to match.
+  const cookieStore = await cookies();
+  const presentedNonce = cookieStore.get(SPOTIFY_NONCE_COOKIE)?.value;
+  const expectedNonce = stateNonce(state);
+  if (!presentedNonce || !expectedNonce || presentedNonce !== expectedNonce) {
+    console.error("Spotify callback nonce mismatch", { hadCookie: Boolean(presentedNonce) });
+    return back(origin, { spotify: "error", reason: "state_invalid" });
+  }
 
   const code = url.searchParams.get("code");
   if (!code) return back(origin, { spotify: "error", reason: "missing_code" });
@@ -48,6 +70,7 @@ export async function GET(request: Request) {
       redirect_uri: redirectUri(origin),
     }),
     cache: "no-store",
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!response.ok) {
@@ -69,6 +92,7 @@ export async function GET(request: Request) {
       const me = await fetch("https://api.spotify.com/v1/me", {
         headers: { Authorization: `Bearer ${payload.access_token}` },
         cache: "no-store",
+        signal: AbortSignal.timeout(10_000),
       });
       if (me.ok) {
         const profile = (await me.json()) as { display_name?: string; id?: string };

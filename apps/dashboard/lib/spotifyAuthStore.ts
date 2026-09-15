@@ -63,7 +63,11 @@ export function decryptToken(envelope: string, key: Buffer = encryptionKey()): s
   const [version, iv, tag, ciphertext] = envelope.split(":");
   if (version !== ENVELOPE_VERSION) throw new Error(`Unsupported token envelope version: ${version}`);
   const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(iv, "base64"));
-  decipher.setAuthTag(Buffer.from(tag, "base64"));
+  const authTag = Buffer.from(tag, "base64");
+  // Node accepts truncated GCM tags: a 4-byte tag still decrypts, dropping
+  // forgery resistance from 2^-128 to 2^-32. Require the full 16 bytes.
+  if (authTag.length !== 16) throw new Error("Invalid token envelope: auth tag length");
+  decipher.setAuthTag(authTag);
   return Buffer.concat([decipher.update(Buffer.from(ciphertext, "base64")), decipher.final()]).toString("utf8");
 }
 

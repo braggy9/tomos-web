@@ -6,6 +6,7 @@ import {
   knownSpotifyError,
   redirectUri,
   stateKey,
+  stateNonce,
   SPOTIFY_SCOPE,
   verifyState,
 } from "./spotifyOAuth";
@@ -140,5 +141,37 @@ describe("state key derivation", () => {
     const a = stateKey("secret-a");
     stateKey("secret-b");
     expect(stateKey("secret-a").equals(a)).toBe(true);
+  });
+});
+
+describe("state nonce, for double-submit binding", () => {
+  it("extracts the nonce a connect puts in its cookie", () => {
+    const state = createState(SECRET);
+    expect(stateNonce(state)).toBe(state.split(".")[0]);
+  });
+
+  it("returns null for anything that is not a three-part state", () => {
+    expect(stateNonce(null)).toBeNull();
+    expect(stateNonce("")).toBeNull();
+    expect(stateNonce("a.b")).toBeNull();
+    expect(stateNonce(".b.c")).toBeNull();
+  });
+
+  it("gives a different nonce per connect, so one cookie cannot match another state", () => {
+    expect(stateNonce(createState(SECRET))).not.toBe(stateNonce(createState(SECRET)));
+  });
+});
+
+describe("token envelope integrity", () => {
+  const key = scryptSync(SECRET, "tomos-gig-radar-spotify-token-v1", 32);
+
+  it("rejects a truncated auth tag, which Node would otherwise accept", () => {
+    const [v, iv, tag, ct] = encryptToken("token", key).split(":");
+    const truncated = Buffer.from(tag, "base64").subarray(0, 4).toString("base64");
+    expect(() => decryptToken([v, iv, truncated, ct].join(":"), key)).toThrow(/auth tag length/);
+  });
+
+  it("still accepts a full-length tag", () => {
+    expect(decryptToken(encryptToken("token", key), key)).toBe("token");
   });
 });

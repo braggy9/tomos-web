@@ -38,6 +38,15 @@ export function createState(clientSecret: string, nowSeconds: number = Math.floo
   return `${payload}.${sign(payload, stateKey(clientSecret))}`;
 }
 
+/** The nonce segment of a state, for double-submit binding. */
+export function stateNonce(state: string | null | undefined): string | null {
+  if (!state) return null;
+  const parts = state.split(".");
+  return parts.length === 3 && parts[0] ? parts[0] : null;
+}
+
+export const SPOTIFY_NONCE_COOKIE = "spotify_oauth_nonce";
+
 export type StateVerdict = { valid: true } | { valid: false; reason: "malformed" | "bad_signature" | "expired" };
 
 export function verifyState(

@@ -101,6 +101,13 @@ are server-only.
 
 ### Connect Spotify (preferred)
 
+**Once connected, unset `SPOTIFY_REFRESH_TOKEN`.** The env var is read only when
+no database is configured. If `DATABASE_URL` were later removed while a stale
+refresh token remained, a disconnected account would resurrect, because the
+`revoked` marker lives in the database that is no longer being read. Leaving the
+variable set is the only way to reach that state.
+
+
 `GET /api/spotify/connect` (session-gated) redirects the signed-in owner to
 Spotify with a signed, expiring state and the `user-follow-read` scope.
 `GET /api/spotify/callback` verifies the state, exchanges the code, confirms the
