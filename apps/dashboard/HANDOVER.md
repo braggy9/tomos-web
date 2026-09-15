@@ -78,7 +78,7 @@ them to Production. Redeploy after changing them.
 ```text
 SPOTIFY_CLIENT_ID
 SPOTIFY_CLIENT_SECRET
-SPOTIFY_REFRESH_TOKEN
+DATABASE_URL
 TICKETMASTER_API_KEY
 GIG_RADAR_COUNTRY_CODE=AU
 GIG_RADAR_STATE_CODE=NSW
@@ -87,6 +87,11 @@ TRAINING_RADAR_PAGE_PASSWORD
 TRAINING_RADAR_READ_TOKEN
 ```
 
+`SPOTIFY_REFRESH_TOKEN` is no longer required. The **Connect Spotify** flow
+obtains and stores the refresh token; the env var is still read as a fallback so
+an existing deployment keeps working and so the app still functions with no
+database. A stored token always wins over the env var.
+
 `SPOTIFY_REFRESH_TOKEN` must belong to the configured Spotify application and
 have `user-follow-read`. Client ID plus client secret is insufficient in the
 current implementation.
@@ -94,7 +99,29 @@ current implementation.
 Do not create `NEXT_PUBLIC_` versions of credentials. All provider credentials
 are server-only.
 
-### Generating `SPOTIFY_REFRESH_TOKEN`
+### Connect Spotify (preferred)
+
+`GET /api/spotify/connect` (session-gated) redirects the signed-in owner to
+Spotify with a signed, expiring state and the `user-follow-read` scope.
+`GET /api/spotify/callback` verifies the state, exchanges the code, confirms the
+granted scope, records the granting account for display, and writes the refresh
+token to the `spotify_auth` table. `POST /api/spotify/disconnect` removes it.
+
+The state key and the at-rest encryption key are both derived from
+`SPOTIFY_CLIENT_SECRET`, so neither adds configuration. Rotating that secret
+therefore invalidates a stored token — correct behaviour, since a rotated secret
+means reconnecting regardless.
+
+Storage is a dashboard-owned Neon project (`tomos-dashboard`, Sydney), holding a
+single-row `spotify_auth` table. The handover's step 4 prefers the TomOS backend
+as system of record; it is not reachable from the dashboard's credentials today,
+so the documented fallback was taken.
+
+The callback never reflects Spotify's error text into a URL. Failures return a
+short code the dashboard generates (`state_expired`, `exchange_400`,
+`missing_scope`, `store_failed`); the detail goes to server logs.
+
+### Generating `SPOTIFY_REFRESH_TOKEN` manually (fallback)
 
 The three Spotify values are not interchangeable. The client ID and secret come
 from the Spotify developer dashboard; the refresh token is produced once by a
@@ -143,12 +170,13 @@ account that follows nobody, which is a different fault from a missing scope.
 
 ### Product gaps
 
-- No Connect Spotify button, OAuth start route, callback, state validation,
-  reconnect, or disconnect workflow.
+- ~~No Connect Spotify button, OAuth start route, callback, state validation,
+  reconnect, or disconnect workflow.~~ Delivered: connect, callback, disconnect,
+  signed expiring state, encrypted token at rest.
 - Only followed Spotify artists are imported; saved-album artists, priorities,
   ignored artists, aliases, and manual artists are absent.
-- No durable datastore. There is no `firstSeenAt`, change history, scan history,
-  notification history, or durable source health.
+- Partial datastore: `spotify_auth` only. Still no `firstSeenAt`, change history,
+  scan history, notification history, or durable source health.
 - No scheduler. Opening `/gigs` or reading its API performs provider work.
 - No push, email, calendar, presale, or public-sale notification delivery.
 - No interested, dismissed, wrong-artist, or tickets-bought actions.

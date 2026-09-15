@@ -1,4 +1,5 @@
 import { attractionMatchesArtist, deduplicateEvents, isNswEvent, isUpcoming, saleNeedsAttention, type GigEvent } from "./gigRadarLogic";
+import { isSpotifyStoreConfigured, readSpotifyAuth } from "./spotifyAuthStore";
 
 interface SpotifyArtist {
   id: string;
@@ -22,11 +23,30 @@ export interface GigRadar {
   sourceHealth: { spotify: SourceHealth; ticketmaster: SourceHealth };
 }
 
+/**
+ * Resolves the refresh token. A token stored by the Connect Spotify flow wins;
+ * SPOTIFY_REFRESH_TOKEN remains supported so an existing env-var deployment
+ * keeps working and so the dashboard still functions with no database.
+ */
+async function resolveRefreshToken(): Promise<string | null> {
+  const fromEnv = process.env.SPOTIFY_REFRESH_TOKEN?.trim() || null;
+  if (!isSpotifyStoreConfigured()) return fromEnv;
+  try {
+    const stored = await readSpotifyAuth();
+    if (stored?.refreshToken) return stored.refreshToken;
+  } catch (error) {
+    // A store failure must not masquerade as "not connected": surface it.
+    throw new Error(`Spotify token store unavailable: ${error instanceof Error ? error.message : "unknown error"}`);
+  }
+  return fromEnv;
+}
+
 async function spotifyAccessToken(): Promise<string> {
   const clientId = process.env.SPOTIFY_CLIENT_ID?.trim();
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET?.trim();
-  const refreshToken = process.env.SPOTIFY_REFRESH_TOKEN?.trim();
-  if (!clientId || !clientSecret || !refreshToken) throw new Error("Spotify credentials are not configured");
+  if (!clientId || !clientSecret) throw new Error("Spotify credentials are not configured");
+  const refreshToken = await resolveRefreshToken();
+  if (!refreshToken) throw new Error("Spotify is not connected");
 
   const response = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",

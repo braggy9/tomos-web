@@ -26,11 +26,12 @@ function EventCard({ event, urgent = false }: { event: GigEvent; urgent?: boolea
   );
 }
 
-export function GigRadarBoard({ data }: { data: GigRadar }) {
+export function GigRadarBoard({ data, connection }: { data: GigRadar; connection?: SpotifyConnection }) {
   const sourceProblems = Object.entries(data.sourceHealth).filter(([, source]) => source.status !== "healthy");
   return (
     <main className="gig-shell">
       <RadarNav active="gigs" />
+      {connection && <SpotifyConnectionPanel connection={connection} />}
       <header className="gig-hero">
         <div><p>TomOS / Sydney &amp; NSW live music</p><h1>Gig Radar</h1></div>
         <aside><strong>{data.events.length}</strong><span>upcoming shows</span></aside>
@@ -57,5 +58,41 @@ export function GigRadarBoard({ data }: { data: GigRadar }) {
       </section>
       <footer className="gig-footer">Updated {localTime(data.generatedAt)} · Australia/Sydney</footer>
     </main>
+  );
+}
+
+export type SpotifyConnection = {
+  connected: boolean;
+  spotifyUser: string | null;
+  connectedAt: string | null;
+  storeConfigured: boolean;
+  notice: string | null;
+};
+
+function SpotifyConnectionPanel({ connection }: { connection: SpotifyConnection }) {
+  return (
+    <section className="spotify-connect" aria-labelledby="spotify-connect-title">
+      <div>
+        <p>Spotify</p>
+        <h2 id="spotify-connect-title">
+          {connection.connected
+            ? `Connected${connection.spotifyUser ? ` as ${connection.spotifyUser}` : ""}`
+            : "Not connected"}
+        </h2>
+        {connection.notice && <small className="spotify-connect__notice">{connection.notice}</small>}
+        {!connection.connected && !connection.storeConfigured && (
+          <small>Set DATABASE_URL before connecting, or the granted token cannot be stored.</small>
+        )}
+      </div>
+      {connection.connected ? (
+        <form method="post" action="/api/spotify/disconnect">
+          <button type="submit">Disconnect</button>
+        </form>
+      ) : (
+        <a className="spotify-connect__cta" href="/api/spotify/connect">
+          Connect Spotify
+        </a>
+      )}
+    </section>
   );
 }
