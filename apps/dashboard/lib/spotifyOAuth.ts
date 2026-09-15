@@ -16,8 +16,16 @@ function base64url(input: Buffer): string {
  * env var. The secret is already required for the token exchange, so this adds
  * no new configuration and no new thing to rotate.
  */
+let cachedStateKey: { secret: string; key: Buffer } | null = null;
+
 export function stateKey(clientSecret: string): Buffer {
-  return scryptSync(clientSecret, STATE_KEY_SALT, 32);
+  // The callback is intentionally unauthenticated, so any fabricated request
+  // reaches state verification. Deriving a scrypt key per request would let a
+  // cheap flood occupy the event loop, so it is memoised per process.
+  if (cachedStateKey?.secret === clientSecret) return cachedStateKey.key;
+  const key = scryptSync(clientSecret, STATE_KEY_SALT, 32);
+  cachedStateKey = { secret: clientSecret, key };
+  return key;
 }
 
 function sign(payload: string, key: Buffer): string {

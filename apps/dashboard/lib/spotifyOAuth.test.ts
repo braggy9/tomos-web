@@ -5,6 +5,7 @@ import {
   hasFollowReadScope,
   knownSpotifyError,
   redirectUri,
+  stateKey,
   SPOTIFY_SCOPE,
   verifyState,
 } from "./spotifyOAuth";
@@ -122,5 +123,22 @@ describe("spotify error reflection", () => {
     expect(knownSpotifyError("Call 1800-NOT-SPOTIFY to restore access")).toBe("unspecified");
     expect(knownSpotifyError("<script>alert(1)</script>")).toBe("unspecified");
     expect(knownSpotifyError("")).toBe("unspecified");
+  });
+});
+
+describe("state key derivation", () => {
+  it("memoises per secret so a public callback flood cannot force scrypt each time", () => {
+    const first = stateKey(SECRET);
+    expect(stateKey(SECRET)).toBe(first); // identity, not just equality
+  });
+
+  it("still derives a distinct key for a different secret", () => {
+    expect(stateKey("secret-a").equals(stateKey("secret-b"))).toBe(false);
+  });
+
+  it("re-derives when the secret changes back, rather than serving a stale key", () => {
+    const a = stateKey("secret-a");
+    stateKey("secret-b");
+    expect(stateKey("secret-a").equals(a)).toBe(true);
   });
 });

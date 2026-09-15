@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { hasFollowReadScope, knownSpotifyError, redirectUri, SPOTIFY_TOKEN_URL, verifyState } from "../../../../lib/spotifyOAuth";
 import { saveSpotifyAuth } from "../../../../lib/spotifyAuthStore";
+import { invalidateGigRadarCache } from "../../../../lib/gigRadar";
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +81,8 @@ export async function GET(request: Request) {
 
   try {
     await saveSpotifyAuth({ refreshToken: payload.refresh_token, scope: payload.scope ?? "", spotifyUser });
+    // The account may have changed; a stale scan would contradict the page.
+    invalidateGigRadarCache();
   } catch (error) {
     console.error("Storing Spotify refresh token failed", error instanceof Error ? error.message : error);
     return back(origin, { spotify: "error", reason: "store_failed" });

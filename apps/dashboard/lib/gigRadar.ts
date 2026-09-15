@@ -1,5 +1,5 @@
 import { attractionMatchesArtist, deduplicateEvents, isNswEvent, isUpcoming, saleNeedsAttention, type GigEvent } from "./gigRadarLogic";
-import { isSpotifyStoreConfigured, readSpotifyAuth } from "./spotifyAuthStore";
+import { isSpotifyStoreConfigured, readSpotifyAuthState } from "./spotifyAuthStore";
 
 interface SpotifyArtist {
   id: string;
@@ -31,13 +31,17 @@ export interface GigRadar {
 async function resolveRefreshToken(): Promise<string | null> {
   const fromEnv = process.env.SPOTIFY_REFRESH_TOKEN?.trim() || null;
   if (!isSpotifyStoreConfigured()) return fromEnv;
+  let state;
   try {
-    const stored = await readSpotifyAuth();
-    if (stored?.refreshToken) return stored.refreshToken;
+    state = await readSpotifyAuthState();
   } catch (error) {
     // A store failure must not masquerade as "not connected": surface it.
     throw new Error(`Spotify token store unavailable: ${error instanceof Error ? error.message : "unknown error"}`);
   }
+  if (state.kind === "connected") return state.auth.refreshToken;
+  // An explicit disconnect must not be undone by a lingering env var, or
+  // scans would keep reading the account the owner just disconnected.
+  if (state.kind === "revoked") return null;
   return fromEnv;
 }
 
@@ -162,6 +166,16 @@ async function ticketmasterEvents(artists: SpotifyArtist[]): Promise<Ticketmaste
 }
 
 let cached: { expiresAt: number; data: GigRadar } | undefined;
+
+/**
+ * Clears the in-process scan cache. Credential changes must call this:
+ * otherwise a reconnect under a different Spotify account would keep serving
+ * the previous account's artists and events for the rest of the cache window,
+ * while the page reported the new account as connected.
+ */
+export function invalidateGigRadarCache(): void {
+  cached = undefined;
+}
 
 export async function getGigRadarData(now = new Date()): Promise<GigRadar> {
   if (cached && cached.expiresAt > now.getTime()) return cached.data;
