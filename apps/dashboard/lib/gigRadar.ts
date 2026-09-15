@@ -1,5 +1,5 @@
 import { attractionMatchesArtist, deduplicateEvents, isNswEvent, isUpcoming, saleNeedsAttention, type GigEvent } from "./gigRadarLogic";
-import { isSpotifyStoreConfigured, readSpotifyAuthState } from "./spotifyAuthStore";
+import { isSpotifyStoreConfigured, readAuthRevision, readSpotifyAuthState } from "./spotifyAuthStore";
 
 interface SpotifyArtist {
   id: string;
@@ -165,20 +165,39 @@ async function ticketmasterEvents(artists: SpotifyArtist[]): Promise<Ticketmaste
   return { events, succeeded, failed };
 }
 
-let cached: { expiresAt: number; data: GigRadar } | undefined;
+let cached: { expiresAt: number; data: GigRadar; authRevision: string } | undefined;
 
 /**
- * Clears the in-process scan cache. Credential changes must call this:
- * otherwise a reconnect under a different Spotify account would keep serving
- * the previous account's artists and events for the rest of the cache window,
- * while the page reported the new account as connected.
+ * The credential state a cached scan was built under. Compared on every cache
+ * hit, so any instance holding a scan from a previous connect discards it.
+ * "unversioned" is used when no store is configured, where the env var is the
+ * only credential and cannot change without a redeploy.
+ */
+async function currentAuthRevision(): Promise<string> {
+  if (!isSpotifyStoreConfigured()) return "unversioned";
+  return readAuthRevision();
+}
+
+/**
+ * Clears this instance's scan cache. Correctness does not depend on it —
+ * cross-instance staleness is handled by the authRevision check below, because
+ * a serverless deployment runs many instances and this only reaches one. It
+ * makes the instance that handled the credential change immediately correct.
  */
 export function invalidateGigRadarCache(): void {
   cached = undefined;
 }
 
 export async function getGigRadarData(now = new Date()): Promise<GigRadar> {
-  if (cached && cached.expiresAt > now.getTime()) return cached.data;
+  let authRevision: string;
+  try {
+    authRevision = await currentAuthRevision();
+  } catch {
+    // The revision is unreadable, so a cached scan cannot be trusted. Fall
+    // through and rebuild; resolveRefreshToken surfaces the store error.
+    authRevision = `unreadable:${now.getTime()}`;
+  }
+  if (cached && cached.expiresAt > now.getTime() && cached.authRevision === authRevision) return cached.data;
   let artists: SpotifyArtist[] = [];
   let events: GigEvent[] = [];
   let spotify: SourceHealth = { status: "healthy" };
@@ -213,7 +232,7 @@ export async function getGigRadarData(now = new Date()): Promise<GigRadar> {
   };
   // Do not pin a temporary credential/provider outage in memory for six hours.
   if (spotify.status === "healthy" && ticketmaster.status !== "unavailable") {
-    cached = { expiresAt: now.getTime() + 6 * 60 * 60 * 1_000, data };
+    cached = { expiresAt: now.getTime() + 6 * 60 * 60 * 1_000, data, authRevision };
   }
   return data;
 }

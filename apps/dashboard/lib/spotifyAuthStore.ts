@@ -169,6 +169,23 @@ export async function clearSpotifyAuth(): Promise<void> {
   `;
 }
 
+/**
+ * A durable marker of the current credential state, for cache validation.
+ * `updated_at` changes on every connect and disconnect, and "none" is distinct
+ * from any timestamp, so a cached scan built under different credentials can be
+ * detected from any serverless instance — clearing a module variable cannot do
+ * that, since each warm instance holds its own.
+ */
+export async function readAuthRevision(): Promise<string> {
+  await ensureSchema();
+  const sql = neon(databaseUrl());
+  const rows = (await sql`select updated_at, revoked_at from spotify_auth where id = 'singleton'`) as Array<Record<string, unknown>>;
+  const row = rows[0];
+  if (!row) return "none";
+  const revoked = row.revoked_at ? "revoked" : "live";
+  return `${revoked}:${new Date(String(row.updated_at)).toISOString()}`;
+}
+
 export function isSpotifyStoreConfigured(): boolean {
   return Boolean(process.env.DATABASE_URL?.trim());
 }
