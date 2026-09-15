@@ -63,6 +63,8 @@ export function GigRadarBoard({ data, connection }: { data: GigRadar; connection
 
 export type SpotifyConnection = {
   connected: boolean;
+  /** Which credential is live: the stored token, or the environment fallback. */
+  via: "store" | "environment";
   spotifyUser: string | null;
   connectedAt: string | null;
   storeConfigured: boolean;
@@ -76,7 +78,9 @@ function SpotifyConnectionPanel({ connection }: { connection: SpotifyConnection 
         <p>Spotify</p>
         <h2 id="spotify-connect-title">
           {connection.connected
-            ? `Connected${connection.spotifyUser ? ` as ${connection.spotifyUser}` : ""}`
+            ? connection.via === "environment"
+              ? "Connected via environment token"
+              : `Connected${connection.spotifyUser ? ` as ${connection.spotifyUser}` : ""}`
             : "Not connected"}
         </h2>
         {connection.notice && <small className="spotify-connect__notice">{connection.notice}</small>}
@@ -84,7 +88,11 @@ function SpotifyConnectionPanel({ connection }: { connection: SpotifyConnection 
           <small>Set DATABASE_URL before connecting, or the granted token cannot be stored.</small>
         )}
       </div>
-      {connection.connected ? (
+      {connection.via === "environment" ? (
+        // Neither action applies: disconnect has no row to revoke and connect
+        // would fail without a store. Say what to do instead.
+        <small>Set DATABASE_URL to manage the connection here.</small>
+      ) : connection.connected ? (
         <form method="post" action="/api/spotify/disconnect">
           <button type="submit">Disconnect</button>
         </form>

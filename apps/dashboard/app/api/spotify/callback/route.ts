@@ -8,10 +8,45 @@ export const dynamic = "force-dynamic";
 
 const PRIVATE_HEADERS = { "Cache-Control": "no-store", "X-Robots-Tag": "noindex" };
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * Hands the browser back to /gigs via a same-site client navigation rather than
+ * an HTTP redirect.
+ *
+ * Spotify sends the browser here cross-site, and the dashboard session cookie
+ * is sameSite: "strict". A redirect chain that began cross-site stays cross-site
+ * for cookie purposes, so /gigs would not receive the session cookie and would
+ * bounce the owner to the login screen — with the token stored but no
+ * confirmation shown. A navigation started by this page is same-site, so the
+ * session cookie is sent.
+ *
+ * The alternative, relaxing the session cookie to "lax", would weaken an
+ * existing protection for the whole dashboard to serve one flow.
+ */
 function back(origin: string, params: Record<string, string>) {
   const url = new URL("/gigs", origin);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
-  const response = NextResponse.redirect(url, { headers: PRIVATE_HEADERS });
+  const target = escapeHtml(url.pathname + url.search);
+
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">` +
+    `<meta name="robots" content="noindex"><title>Spotify</title>` +
+    `<meta http-equiv="refresh" content="0;url=${target}"></head>` +
+    `<body><p>Returning to Gig Radar&hellip; <a href="${target}">continue</a></p>` +
+    `<script>location.replace(${JSON.stringify(url.pathname + url.search)})</script>` +
+    `</body></html>`;
+
+  const response = new NextResponse(html, {
+    status: 200,
+    headers: { ...PRIVATE_HEADERS, "Content-Type": "text/html; charset=utf-8" },
+  });
   // Always burn the nonce, success or failure: a state that reached the
   // callback must not be usable a second time.
   response.cookies.set(SPOTIFY_NONCE_COOKIE, "", { httpOnly: true, path: "/api/spotify", maxAge: 0 });

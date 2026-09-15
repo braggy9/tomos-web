@@ -46,8 +46,13 @@ export default async function GigsPage({
   const reason = typeof params.reason === "string" ? params.reason : undefined;
 
   const storeConfigured = isSpotifyStoreConfigured();
+  // Without a store the environment token is the live credential, so reporting
+  // "not connected" would contradict a working scan and offer a Connect link
+  // that can only fail with spotify_token_store_not_configured.
+  const envTokenActive = !storeConfigured && Boolean(process.env.SPOTIFY_REFRESH_TOKEN?.trim());
   let connection: SpotifyConnection = {
-    connected: false,
+    connected: envTokenActive,
+    via: envTokenActive ? "environment" : "store",
     spotifyUser: null,
     connectedAt: null,
     storeConfigured,
@@ -58,7 +63,7 @@ export default async function GigsPage({
     try {
       const stored = await readSpotifyAuth();
       if (stored) {
-        connection = { ...connection, connected: true, spotifyUser: stored.spotifyUser, connectedAt: stored.connectedAt };
+        connection = { ...connection, connected: true, via: "store", spotifyUser: stored.spotifyUser, connectedAt: stored.connectedAt };
       }
     } catch (error) {
       // Report the store being unreachable rather than rendering "not
