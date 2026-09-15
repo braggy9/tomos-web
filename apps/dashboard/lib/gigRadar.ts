@@ -1,4 +1,5 @@
 import { attractionMatchesArtist, deduplicateEvents, isNswEvent, isUpcoming, saleNeedsAttention, type GigEvent } from "./gigRadarLogic";
+import { isSpotifyStoreConfigured, readAuthRevision, readSpotifyAuthState } from "./spotifyAuthStore";
 
 interface SpotifyArtist {
   id: string;
@@ -22,11 +23,39 @@ export interface GigRadar {
   sourceHealth: { spotify: SourceHealth; ticketmaster: SourceHealth };
 }
 
+/**
+ * Resolves the refresh token. A token stored by the Connect Spotify flow wins;
+ * SPOTIFY_REFRESH_TOKEN remains supported so an existing env-var deployment
+ * keeps working and so the dashboard still functions with no database.
+ */
+async function resolveRefreshToken(): Promise<string | null> {
+  const fromEnv = process.env.SPOTIFY_REFRESH_TOKEN?.trim() || null;
+  if (!isSpotifyStoreConfigured()) return fromEnv;
+  let state;
+  try {
+    state = await readSpotifyAuthState();
+  } catch (error) {
+    // A store failure must not masquerade as "not connected". The message is
+    // logged rather than thrown onward: this detail reaches sourceHealth, which
+    // /api/gig-radar serves to any TRAINING_RADAR_READ_TOKEN holder — a broader
+    // credential than the owner's password — and a driver error can name the
+    // database host.
+    console.error("Spotify token store unavailable", error instanceof Error ? error.message : error);
+    throw new Error("Spotify token store unavailable");
+  }
+  if (state.kind === "connected") return state.auth.refreshToken;
+  // An explicit disconnect must not be undone by a lingering env var, or
+  // scans would keep reading the account the owner just disconnected.
+  if (state.kind === "revoked") return null;
+  return fromEnv;
+}
+
 async function spotifyAccessToken(): Promise<string> {
   const clientId = process.env.SPOTIFY_CLIENT_ID?.trim();
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET?.trim();
-  const refreshToken = process.env.SPOTIFY_REFRESH_TOKEN?.trim();
-  if (!clientId || !clientSecret || !refreshToken) throw new Error("Spotify credentials are not configured");
+  if (!clientId || !clientSecret) throw new Error("Spotify credentials are not configured");
+  const refreshToken = await resolveRefreshToken();
+  if (!refreshToken) throw new Error("Spotify is not connected");
 
   const response = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
@@ -141,10 +170,39 @@ async function ticketmasterEvents(artists: SpotifyArtist[]): Promise<Ticketmaste
   return { events, succeeded, failed };
 }
 
-let cached: { expiresAt: number; data: GigRadar } | undefined;
+let cached: { expiresAt: number; data: GigRadar; authRevision: string } | undefined;
+
+/**
+ * The credential state a cached scan was built under. Compared on every cache
+ * hit, so any instance holding a scan from a previous connect discards it.
+ * "unversioned" is used when no store is configured, where the env var is the
+ * only credential and cannot change without a redeploy.
+ */
+async function currentAuthRevision(): Promise<string> {
+  if (!isSpotifyStoreConfigured()) return "unversioned";
+  return readAuthRevision();
+}
+
+/**
+ * Clears this instance's scan cache. Correctness does not depend on it —
+ * cross-instance staleness is handled by the authRevision check below, because
+ * a serverless deployment runs many instances and this only reaches one. It
+ * makes the instance that handled the credential change immediately correct.
+ */
+export function invalidateGigRadarCache(): void {
+  cached = undefined;
+}
 
 export async function getGigRadarData(now = new Date()): Promise<GigRadar> {
-  if (cached && cached.expiresAt > now.getTime()) return cached.data;
+  let authRevision: string;
+  try {
+    authRevision = await currentAuthRevision();
+  } catch {
+    // The revision is unreadable, so a cached scan cannot be trusted. Fall
+    // through and rebuild; resolveRefreshToken surfaces the store error.
+    authRevision = `unreadable:${now.getTime()}`;
+  }
+  if (cached && cached.expiresAt > now.getTime() && cached.authRevision === authRevision) return cached.data;
   let artists: SpotifyArtist[] = [];
   let events: GigEvent[] = [];
   let spotify: SourceHealth = { status: "healthy" };
@@ -179,7 +237,7 @@ export async function getGigRadarData(now = new Date()): Promise<GigRadar> {
   };
   // Do not pin a temporary credential/provider outage in memory for six hours.
   if (spotify.status === "healthy" && ticketmaster.status !== "unavailable") {
-    cached = { expiresAt: now.getTime() + 6 * 60 * 60 * 1_000, data };
+    cached = { expiresAt: now.getTime() + 6 * 60 * 60 * 1_000, data, authRevision };
   }
   return data;
 }

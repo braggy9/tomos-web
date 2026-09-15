@@ -26,7 +26,7 @@ Additional environment variables:
 ```text
 SPOTIFY_CLIENT_ID
 SPOTIFY_CLIENT_SECRET
-SPOTIFY_REFRESH_TOKEN
+DATABASE_URL
 TICKETMASTER_API_KEY
 GIG_RADAR_COUNTRY_CODE=AU
 GIG_RADAR_STATE_CODE=NSW
@@ -55,26 +55,36 @@ events.
 1. Add the variables above to the Vercel project for Production.
 2. Confirm the Spotify secret is current and was never exposed. If it was shared
    in chat or logs, rotate it before use.
-3. Ensure `SPOTIFY_REFRESH_TOKEN` belongs to the same Spotify application and
-   includes `user-follow-read`.
+3. Set `DATABASE_URL` for the dashboard-owned Neon project. The schema is
+   applied automatically on first use; there is no migration step to run.
+   `SPOTIFY_REFRESH_TOKEN` is no longer required — it is read only as a
+   fallback when no database is configured.
 4. Store the Ticketmaster Consumer Key—not its Consumer Secret—as
    `TICKETMASTER_API_KEY`.
 5. Redeploy after changing environment variables.
-6. Sign in, open `/gigs`, and confirm Spotify is healthy, the artist count is
-   expected, and Ticketmaster is healthy or explicitly degraded.
-7. Manually compare returned events with Ticketmaster before calling the live
+6. Sign in, open `/gigs`, and press **Connect Spotify**. Approve the request as
+   the account whose followed artists should be watched; the panel then names
+   the granting account, so a wrong-account connect is visible rather than
+   silent.
+7. Confirm Spotify is healthy, the artist count is expected, and Ticketmaster is
+   healthy or explicitly degraded.
+8. Manually compare returned events with Ticketmaster before calling the live
    integration verified.
 
-The registered production Spotify redirect URI is expected to be
-`https://tomos-dashboard.vercel.app/api/spotify/callback`, but that route is not
-implemented in this MVP. Registering the URI does not connect Spotify; the
-current implementation still needs a pre-generated refresh token.
+Register `https://tomos-dashboard.vercel.app/api/spotify/callback` as a redirect
+URI on the Spotify application. It must match byte-for-byte: the app derives the
+value once from the request origin and uses it for both the authorize request
+and the token exchange, so a mismatch fails both legs identically.
+
+The refresh token is stored encrypted (AES-256-GCM) in the `spotify_auth` table,
+keyed from `SPOTIFY_CLIENT_SECRET`. Rotating that secret invalidates a stored
+token and requires reconnecting, which is correct — a rotated secret could not
+redeem the old token anyway.
 
 ### Gig Radar known limitations
 
-- No Spotify OAuth connect/callback/disconnect flow.
-- Only followed artists are imported.
-- No persistent artist, event, scan, decision, or notification records.
+- Only followed artists are imported; no priorities, aliases, ignored or manual artists.
+- Nothing is persisted except the Spotify credential: no artist, event, scan, decision, or notification records.
 - No scheduled background scan; page and API reads perform discovery.
 - No new-announcement or missed-event classification.
 - No push or email notifications.
@@ -100,7 +110,7 @@ Additional environment variables:
 ```text
 SPOTIFY_CLIENT_ID
 SPOTIFY_CLIENT_SECRET
-SPOTIFY_REFRESH_TOKEN
+DATABASE_URL
 TICKETMASTER_API_KEY
 GIG_RADAR_COUNTRY_CODE=AU
 GIG_RADAR_STATE_CODE=NSW
