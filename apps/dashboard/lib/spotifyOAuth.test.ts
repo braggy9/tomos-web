@@ -3,6 +3,7 @@ import {
   authorizeUrl,
   createState,
   hasFollowReadScope,
+  knownSpotifyError,
   redirectUri,
   SPOTIFY_SCOPE,
   verifyState,
@@ -99,5 +100,27 @@ describe("token encryption at rest", () => {
     flipped[0] ^= 0xff;
     parts[3] = flipped.toString("base64");
     expect(() => decryptToken(parts.join(":"), key)).toThrow();
+  });
+});
+
+describe("spotify error reflection", () => {
+  it("passes through the RFC 6749 codes", () => {
+    for (const code of [
+      "access_denied",
+      "invalid_request",
+      "invalid_scope",
+      "server_error",
+      "temporarily_unavailable",
+      "unauthorized_client",
+      "unsupported_response_type",
+    ]) {
+      expect(knownSpotifyError(code)).toBe(code);
+    }
+  });
+
+  it("does not reflect an attacker-supplied error into the redirect", () => {
+    expect(knownSpotifyError("Call 1800-NOT-SPOTIFY to restore access")).toBe("unspecified");
+    expect(knownSpotifyError("<script>alert(1)</script>")).toBe("unspecified");
+    expect(knownSpotifyError("")).toBe("unspecified");
   });
 });

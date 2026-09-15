@@ -83,3 +83,22 @@ export function grantedScopes(scope: string | null | undefined): string[] {
 export function hasFollowReadScope(scope: string | null | undefined): boolean {
   return grantedScopes(scope).includes(SPOTIFY_SCOPE);
 }
+
+/**
+ * Spotify's `error` value is attacker-controllable: anyone can hit the callback
+ * with a crafted one. Reflecting it into a redirect URL would put arbitrary
+ * text on the owner's page, so only the RFC 6749 codes pass through.
+ */
+const SPOTIFY_OAUTH_ERRORS = new Set([
+  "access_denied",
+  "invalid_request",
+  "invalid_scope",
+  "server_error",
+  "temporarily_unavailable",
+  "unauthorized_client",
+  "unsupported_response_type",
+]);
+
+export function knownSpotifyError(value: string): string {
+  return SPOTIFY_OAUTH_ERRORS.has(value) ? value : "unspecified";
+}

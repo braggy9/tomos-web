@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { hasFollowReadScope, redirectUri, SPOTIFY_TOKEN_URL, verifyState } from "../../../../lib/spotifyOAuth";
+import { hasFollowReadScope, knownSpotifyError, redirectUri, SPOTIFY_TOKEN_URL, verifyState } from "../../../../lib/spotifyOAuth";
 import { saveSpotifyAuth } from "../../../../lib/spotifyAuthStore";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   const origin = url.origin;
 
   const denied = url.searchParams.get("error");
-  if (denied) return back(origin, { spotify: "denied", reason: denied });
+  if (denied) return back(origin, { spotify: "denied", reason: knownSpotifyError(denied) });
 
   const clientId = process.env.SPOTIFY_CLIENT_ID?.trim();
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET?.trim();
