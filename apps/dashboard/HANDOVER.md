@@ -125,8 +125,19 @@ as system of record; it is not reachable from the dashboard's credentials today,
 so the documented fallback was taken.
 
 The callback never reflects Spotify's error text into a URL. Failures return a
-short code the dashboard generates (`state_expired`, `exchange_400`,
-`missing_scope`, `store_failed`); the detail goes to server logs.
+short code the dashboard generates (`state_invalid`, `exchange_400`,
+`missing_scope`, `store_failed`); the detail goes to server logs. Every state
+failure — malformed, expired, bad signature, missing or mismatched nonce cookie
+— collapses to the single code `state_invalid`, deliberately: distinguishing
+them told an anonymous prober whether a state it held was still live.
+
+The state is browser-bound and single-use. Connect sets an httpOnly nonce
+cookie; the callback requires it to match the state's nonce and clears it on
+every exit, success or failure. The callback returns a same-site HTML
+interstitial rather than an HTTP redirect, because the dashboard session cookie
+is `sameSite: "strict"` and a redirect chain begun cross-site stays cross-site
+for cookie purposes — an HTTP redirect would land the owner on the login screen
+with the token stored but no confirmation shown.
 
 ### Generating `SPOTIFY_REFRESH_TOKEN` manually (fallback)
 
@@ -348,6 +359,58 @@ vertical slice for Spotify OAuth plus durable storage and wait for approval.
 ```
 
 ## Production Verification Record
+
+### 15 September 2026 — Connect Spotify live in production; still blocked on four variables
+
+Verified against production `https://tomos-dashboard.vercel.app`, built from
+main `3ce5b11` (the merge of PR #23). A dated observation, not current-state
+documentation.
+
+**The OAuth flow is deployed and behaves as designed.** Probed anonymously:
+
+| Probe | Observed |
+| --- | --- |
+| `GET /` | 200, login surface only |
+| `GET /gigs` | 307 to `/` |
+| `GET /api/gig-radar` | 401 |
+| `GET /api/training-radar` | 401 |
+| `GET /api/spotify/connect` | 401 |
+| `POST /api/spotify/disconnect` | 401 |
+| `GET /api/spotify/nope` | 404 |
+| `GET /gigs?spotify=__proto__` / `constructor` / `toString` | 307, not 500 |
+| Either API with `?token=guess` | 401 |
+
+The callback interstitial returned 200 `text/html` under `cache-control:
+no-store` with `x-robots-tag: noindex`, `&` escaped to `&amp;` in both the
+meta-refresh and the anchor, the `location.replace` argument JSON-quoted, and
+`Set-Cookie: spotify_oauth_nonce=; Max-Age=0; HttpOnly` burning the nonce.
+`?error=access_denied` passed through as `reason=access_denied`;
+`?error="><script>alert(1)</script>` collapsed to `reason=unspecified` with
+zero raw `<script>alert` in the body. A fabricated state with no nonce cookie
+returned `spotify=error&reason=state_invalid`.
+
+**Phase 1 still does not close, for the same reason as 14 September.** Four
+Production variables remain unset on the Vercel project, so Gig Radar has no
+credentials to scan with:
+
+- `SPOTIFY_CLIENT_ID`
+- `SPOTIFY_CLIENT_SECRET` — rotate in the Spotify dashboard first; the previous
+  value was pasted into a chat and is compromised
+- `DATABASE_URL` — Neon project `tomos-dashboard` (`purple-field-04776879`,
+  Sydney); the connection string is in the Neon dashboard
+- `TICKETMASTER_API_KEY` — Consumer Key only
+
+These cannot be set from a coding session: the Vercel MCP server exposes no
+environment-variable tool (confirmed four ways — no such tool in the server, no
+Vercel CLI installed, no token in the environment, none on disk). Setting them
+is a dashboard action. After setting them and redeploying, sign in to `/gigs`
+and click **Connect Spotify** once; the remaining Phase 1 checks below become
+answerable at that point and not before.
+
+The `spotify_auth` table's schema is applied automatically on first use, so no
+migration step is needed against a fresh `DATABASE_URL`. The store and
+revision paths were exercised end-to-end against the real Neon database using
+the app's own code during development; the table was left empty afterwards.
 
 ### 14 September 2026 — Phase 1 blocked, providers unconfigured
 
